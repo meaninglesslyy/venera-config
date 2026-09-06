@@ -20,7 +20,7 @@
 class BiliManga extends ComicSource {
   name = "嗶哩漫畫";
   key = "bilimanga";
-  version = "1.1.0";
+  version = "1.1.1";
   minAppVersion = "1.6.0";
 
   // 更新链接，请替换为你自己的托管地址
