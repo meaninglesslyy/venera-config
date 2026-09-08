@@ -83,7 +83,7 @@ class XChinaPhoto extends ComicSource {
   // 发现页
   explore = [
     {
-      title: "最新套图",
+      title: "小黄书-最新套图",
       type: "multiPageComicList",
       load: async (page) => {
         const url = page === 1 ? this.baseUrl + "/photos.html" : this.baseUrl + "/photos/" + page + ".html";
