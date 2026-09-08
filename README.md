@@ -15,6 +15,7 @@
 ## [真人图包](https://github.com/meaninglesslyy/venera-config/tree/main/%E7%9C%9F%E4%BA%BA%E5%9B%BE%E5%8C%85)
 - [4khd](https://github.com/meaninglesslyy/venera-config/blob/main/%E7%9C%9F%E4%BA%BA%E5%9B%BE%E5%8C%85/4khd.js)
 - [cosplaytele](https://github.com/meaninglesslyy/venera-config/blob/main/%E7%9C%9F%E4%BA%BA%E5%9B%BE%E5%8C%85/cosplaytele.js)
+- [xchina小黄书图包分区](https://github.com/meaninglesslyy/venera-config/blob/main/%E7%9C%9F%E4%BA%BA%E5%9B%BE%E5%8C%85/xc.js)
 
 ## [生肉](https://github.com/meaninglesslyy/venera-config/tree/main/%E7%94%9F%E8%82%89%E6%BC%AB%E7%94%BB)
 - [mangaforfree](https://github.com/meaninglesslyy/venera-config/blob/main/%E7%94%9F%E8%82%89%E6%BC%AB%E7%94%BB/mangaforfree.js)
