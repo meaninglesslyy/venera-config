@@ -4,7 +4,7 @@
 class XChinaPhoto extends ComicSource {
   name = "小黄书 xChina 照片";
   key = "xchina_photo";
-  version = "1.3.0";
+  version = "1.3.1";
   minAppVersion = "1.6.0";
   url = "";
 
@@ -83,7 +83,7 @@ class XChinaPhoto extends ComicSource {
   // 发现页
   explore = [
     {
-      title: "小黄书-最新套图",
+      title: "小黄书最新套图",
       type: "multiPageComicList",
       load: async (page) => {
         const url = page === 1 ? this.baseUrl + "/photos.html" : this.baseUrl + "/photos/" + page + ".html";
@@ -256,12 +256,12 @@ class XChinaPhoto extends ComicSource {
       const count = countMatch ? parseInt(countMatch[1], 10) : 0;
       if (!count || count <= 0) return { images: [] };
 
-      // 按连续编号生成全部图片（_600x0.webp 缩略图，全量可访问）
+      // 按连续编号生成全部图片（高清原图 .jpg）
       const images = [];
       for (let i = 1; i <= count; i++) {
         const numStr = String(i).padStart(5, "0");
         images.push(
-          this.imgBaseUrl + "/photos/" + comicId + "/" + numStr + "_600x0.webp"
+          this.imgBaseUrl + "/photos/" + comicId + "/" + numStr + ".jpg"
         );
       }
       return { images: images };
@@ -280,11 +280,11 @@ class XChinaPhoto extends ComicSource {
       };
     },
 
-    onImageLoad: (url) => {
+    onImageLoad: (url, comicId, epId) => {
       return {
         url: url,
         headers: {
-          Referer: this.baseUrl + "/photos.html",
+          Referer: this.baseUrl + "/photo/id-" + comicId + ".html",
           "User-Agent": this.pageHeaders()["User-Agent"],
           "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
           "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
