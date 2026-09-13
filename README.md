@@ -4,11 +4,11 @@
 
 
 # 使用方法
-##方法一<br>能直接用于在venera地址栏使用的导入链接：
+## 方法一<br>能直接用于在venera地址栏使用的导入链接：
 ```text
 https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/index.json
 ```
-##方法二<br>
+## 方法二<br>
 首先准备一个[venara](https://github.com/venera-app/venera/releases/tag/v1.6.3),下载对应.js文件后导入veneral
   
  导入方式
