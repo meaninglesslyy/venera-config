@@ -8,6 +8,7 @@
 ```text
 https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/index.json
 ```
+如果您不想影响原版仓库源的更新，请自行备份原仓库地址/使用方法二导入
 <br><img width="350" height="650" alt="屏幕截图 2026-09-13 144601" src="https://github.com/user-attachments/assets/53c25129-b53f-4f33-bceb-9c74a779fb0c" />
 <br><img width="344" height="222" alt="屏幕截图 2026-09-13 144608" src="https://github.com/user-attachments/assets/0c73bdc0-206b-454d-82dc-588e5b250a16" />
 <br><img width="345" height="195" alt="屏幕截图 2026-09-13 144615" src="https://github.com/user-attachments/assets/0b3210e5-4520-4e68-963d-36b4230bb15d" />
