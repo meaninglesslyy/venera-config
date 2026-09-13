@@ -1,8 +1,11 @@
 # 多平台适配的venera其他源
 # 持续更新，欢迎投稿
-## 为了弥补含有巨量漫画网站资源的开源软件[Mihon](https://github.com/mihonapp/mihon)无法在iOS设备上使用的遗憾，同时为了观看一些未被[venera-config](https://github.com/venera-app/venera-configs)收录的漫画网站，于是本项目诞生了，利用可以运行于iOS设备的venera + 漫画源.js文件，达到了平替效果。<br>--------------------------------------------------------------------------------------<br>本仓库内文件均由本人做前期准备、部分解密思路参考GitHub开源项目和issues区同好大佬的研究，代码部分全部由deepseek-v4-flash/deepseek-v4-pro编写，技术文档来源于原版[venera-config](https://github.com/venera-app/venera-configs)。可能存在瑕疵，敬请包容。<br>--------------------------------------------------------------------------------------<br>有时网站内部更新导致接口失效无法观看，请及时在issues区反馈<br>--------------------------------------------------------------------------------------<br>由于AI平台的限制，以后可能减少上新sq内容漫画源，会着重于正经漫画平台的更新<br>--------------------------------------------------------------------------------------<br>能直接用于在venera地址栏使用的导入链接：```text
-https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/index.json```
-正在优化更新中
+## 为了弥补含有巨量漫画网站资源的开源软件[Mihon](https://github.com/mihonapp/mihon)无法在iOS设备上使用的遗憾，同时为了观看一些未被[venera-config](https://github.com/venera-app/venera-configs)收录的漫画网站，于是本项目诞生了，利用可以运行于iOS设备的venera + 漫画源.js文件，达到了平替效果。<br>--------------------------------------------------------------------------------------<br>本仓库内文件均由本人做前期准备、部分解密思路参考GitHub开源项目和issues区同好大佬的研究，代码部分全部由deepseek-v4-flash/deepseek-v4-pro编写，技术文档来源于原版[venera-config](https://github.com/venera-app/venera-configs)。可能存在瑕疵，敬请包容。<br>--------------------------------------------------------------------------------------<br>有时网站内部更新导致接口失效无法观看，请及时在issues区反馈<br>--------------------------------------------------------------------------------------<br>由于AI平台的限制，以后可能减少上新sq内容漫画源，会着重于正经漫画平台的更新<br>--------------------------------------------------------------------------------------<br>能直接用于在venera地址栏使用的导入链接：
+```text
+https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/index.json
+```
+
+
 
 # 使用方法
   首先准备一个[venara](https://github.com/venera-app/venera/releases/tag/v1.6.3),下载对应.js文件后导入veneral
