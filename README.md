@@ -9,7 +9,7 @@
 ```text
 https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/index.json
 ```
-如果您不想影响原版仓库源的更新，请自行备份原仓库地址/使用方法二使用本地文件离线导入
+如果您不想影响原版仓库源的更新，请自行备份原仓库地址/使用方法二使用本地文件离线导入<br>
 原仓库地址:
 ```text
 https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
