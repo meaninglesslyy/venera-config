@@ -4,7 +4,7 @@ class ZeroByW33 extends ComicSource {
     key = "zerobyw33"
     version = "1.2.0"
     minAppVersion = "1.6.0"
-    url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-configs@main/zerobyw33.js"
+    url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/normal_comic/zerobyw33.js"
 
     // 永久发布页（GitHub Pages，永不失效）
     landingPage = "https://zerobyw.github.io/"
