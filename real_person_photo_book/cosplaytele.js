@@ -3,7 +3,7 @@ class CosplayTele extends ComicSource {
     key = "cosplaytele"
     version = "1.6.1"
     minAppVersion = "1.6.0"
-    url = ""
+    url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/cosplaytele.js"
     base = "https://cosplaytele.com"
 
     pageHeaders() {
