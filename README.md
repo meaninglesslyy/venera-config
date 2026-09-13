@@ -9,7 +9,7 @@
 https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/index.json
 ```
 ## 方法二<br>源文件导入
-首先准备一个[venara](https://github.com/venera-app/venera/releases/tag/v1.6.3),下载对应.js文件后导入veneral
+下载对应.js文件后导入veneral
   
  导入方式<br>
   漫画源→使用配置文件→选中.js文件打开  
