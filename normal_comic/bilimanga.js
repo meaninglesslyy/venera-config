@@ -24,7 +24,7 @@ class BiliManga extends ComicSource {
   minAppVersion = "1.6.0";
 
   // 更新链接，请替换为你自己的托管地址
-  url = "";
+  url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/normal_comic/bilimanga.js";
 
   get baseUrl() {
     return "https://www.bilimanga.net";
