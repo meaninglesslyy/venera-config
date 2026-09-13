@@ -3,7 +3,7 @@ class FourKHD extends ComicSource {
     key = "fourkhd"
     version = "1.4.3"
     minAppVersion = "1.6.0"
-    url = ""
+    url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/4khd.js"
     base = "https://www.4khd.com"
 
     pageHeaders() {
