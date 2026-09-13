@@ -2,7 +2,7 @@ class MangaForFree extends ComicSource {
 
     name = "MangaForFree"
     key = "mangaforfree"
-    version = "0.6.3"
+    version = "0.6.5"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-configs@main/mangaforfree.js"
 
@@ -78,6 +78,32 @@ class MangaForFree extends ComicSource {
         return res.body
     }
 
+    // 带指数退避的重试：被 Cloudflare 拦下时等一等再试，避免把风控越打越死
+    async fetchBodyRetry(label, url, headers, tries = 3) {
+        for (let i = 1; i <= tries; i++) {
+            try {
+                return await this.fetchBody(label, url, headers)
+            } catch (e) {
+                if (i === tries) throw e
+                await this.sleep(1200 * i)
+            }
+        }
+    }
+
+    // 拉整页（保留 headers 供解析 manga id），带退避重试
+    async fetchPage(label, url, tries = 3) {
+        for (let i = 1; i <= tries; i++) {
+            try {
+                let res = await Network.get(url, this.pageHeaders())
+                if (res.status === 200) return res
+                throw `Invalid status code: ${res.status}`
+            } catch (e) {
+                if (i === tries) throw e
+                await this.sleep(1500 * i)
+            }
+        }
+    }
+
     // sitemap 列表：缓存 6 小时后自动重新拉取，新漫画自动跟上
     async allSlugs() {
         let cached = this.loadData("all_slugs")
@@ -90,7 +116,7 @@ class MangaForFree extends ComicSource {
             } catch (e) { }
         }
 
-        let body = await this.fetchBody("sitemap", `${this.base}/wp-sitemap-posts-wp-manga-1.xml`)
+        let body = await this.fetchBodyRetry("sitemap", `${this.base}/wp-sitemap-posts-wp-manga-1.xml`)
         let slugs = []
         let re = /<loc>https?:\/\/mangaforfree\.net\/manga\/([^/<]+)\/?<\/loc>/g
         let m
@@ -104,12 +130,13 @@ class MangaForFree extends ComicSource {
     }
 
     // 补封面 + 顺手补真实标题（同一请求，带缓存）
+    // 返回 0=已缓存未联网, 1=联网成功, 2=联网失败(疑似被 Cloudflare 拦)
     async fillCover(c) {
         let cachedCover = this.loadData("cov_" + c.id)
         let cachedTitle = this.loadData("tle_" + c.id)
         if (cachedCover) c.cover = cachedCover
         if (cachedTitle) c.title = cachedTitle
-        if (cachedCover && cachedTitle) return
+        if (cachedCover && cachedTitle) return 0
         try {
             let res = await Network.get(`${this.base}/manga/${c.id}/`, this.pageHeaders())
             if (res.status === 200) {
@@ -120,15 +147,22 @@ class MangaForFree extends ComicSource {
                 doc.dispose()
                 if (cover) { c.cover = cover; this.saveData("cov_" + c.id, cover) }
                 if (tEl) { c.title = tEl; this.saveData("tle_" + c.id, tEl) }
+                return 1
             }
-        } catch (e) { }
+            return 2
+        } catch (e) {
+            return 2
+        }
     }
 
+    // 串行补封面，按结果自适应节流，避免请求洪峰触发 Cloudflare 风控
     async enrichCovers(comics, max = 24) {
         let list = comics.slice(0, max)
-        for (let i = 0; i < list.length; i += 2) {
-            await Promise.all(list.slice(i, i + 2).map(c => this.fillCover(c)))
-            await this.sleep(250)
+        for (let c of list) {
+            let status = await this.fillCover(c)
+            if (status === 0) await this.sleep(60)        // 缓存命中，轻间隔
+            else if (status === 1) await this.sleep(600)  // 联网成功，正常节流
+            else await this.sleep(1500)                   // 疑似被拦，多等一会儿让风控冷静
         }
     }
 
@@ -136,7 +170,7 @@ class MangaForFree extends ComicSource {
     async genreRss(param, page) {
         let url = param === "latest" ? `${this.base}/manga/feed/` : `${this.base}/manga-genre/${param}/feed/`
         url += `?posts_per_rss=30&paged=${page}`
-        return this.parseRss(await this.fetchBody(`${param} p${page}`, url))
+        return this.parseRss(await this.fetchBodyRetry(`${param} p${page}`, url))
     }
 
     // HTML 漫画条目解析（搜索用）
@@ -155,7 +189,7 @@ class MangaForFree extends ComicSource {
         return comics
     }
 
-    // ============ 大厅：LATEST + “更多”入口（跳到 ALL） ============
+    // ============ 大厅：LATEST + "更多"入口（跳到 ALL） ============
     explore = [
         {
             title: "MangaForFree",
@@ -174,7 +208,7 @@ class MangaForFree extends ComicSource {
         }
     ]
 
-    // ============ 分类：ALL（sitemap 驱动，43页×24本） ============
+    // ============ 分类：ALL（sitemap 驱动，每页12本，节流加载） ============
     category = {
         title: "MangaForFree",
         parts: [
@@ -193,7 +227,7 @@ class MangaForFree extends ComicSource {
         load: async (category, param, options, page) => {
             try {
                 let slugs = await this.allSlugs()
-                let perPage = 24
+                let perPage = 12
                 let start = (page - 1) * perPage
                 let slice = slugs.slice(start, start + perPage)
 
@@ -222,14 +256,14 @@ class MangaForFree extends ComicSource {
                 let comics = []
                 for (let p = 1; p <= 2; p++) {
                     let url = p === 1 ? `${this.base}/search/${kw}/` : `${this.base}/search/${kw}/page/${p}/`
-                    comics = comics.concat(this.parseSearchHtml(await this.fetchBody("search", url)))
+                    comics = comics.concat(this.parseSearchHtml(await this.fetchBodyRetry("search", url, this.pageHeaders(), 2)))
                 }
                 comics = this.dedupe(comics)
                 if (comics.length) return { comics, maxPage: page + 1 }
             } catch (e) { }
 
             try {
-                let comics = this.parseRss(await this.fetchBody("search-rss", `${this.base}/search/${kw}/feed/rss2/`))
+                let comics = this.parseRss(await this.fetchBodyRetry("search-rss", `${this.base}/search/${kw}/feed/rss2/`, this.pageHeaders(), 2))
                 await this.enrichCovers(comics, 10)
                 if (comics.length) return { comics, maxPage: 1 }
             } catch (e) { }
@@ -237,9 +271,11 @@ class MangaForFree extends ComicSource {
             try {
                 let comics = []
                 for (let p = 1; p <= 2; p++) {
-                    comics = comics.concat(this.parseRss(await this.fetchBody(
+                    comics = comics.concat(this.parseRss(await this.fetchBodyRetry(
                         "search-rss2",
-                        `${this.base}/?s=${kw}&post_type=wp-manga&feed=rss2&posts_per_rss=50&paged=${p}`
+                        `${this.base}/?s=${kw}&post_type=wp-manga&feed=rss2&posts_per_rss=50&paged=${p}`,
+                        this.pageHeaders(),
+                        2
                     )))
                 }
                 comics = this.dedupe(comics)
@@ -287,8 +323,22 @@ class MangaForFree extends ComicSource {
 
     comic = {
         loadInfo: async (id) => {
-            let res = await Network.get(`${this.base}/manga/${id}/`, this.pageHeaders())
-            if (res.status !== 200) throw `Invalid status code: ${res.status}`
+            // 30 分钟短缓存：反复进同一本漫画不再发请求，避免反复触发 CF 验证
+            let cacheKey = "info_" + id
+            let cached = this.loadData(cacheKey)
+            if (cached) {
+                try {
+                    let o = JSON.parse(cached)
+                    if (o.t && (Date.now() - o.t) < 30 * 60 * 1000 && o.chapters) {
+                        return new ComicDetails({
+                            id, title: o.title, cover: o.cover, description: o.description,
+                            tags: o.tags, chapters: o.chapters,
+                        })
+                    }
+                } catch (e) { }
+            }
+
+            let res = await this.fetchPage(`detail ${id}`, `${this.base}/manga/${id}/`)
             let doc = new HtmlDocument(res.body)
             let title = doc.querySelector(".post-title h1")?.text?.trim() || id
             let coverEl = doc.querySelector(".summary_image img")
@@ -306,16 +356,32 @@ class MangaForFree extends ComicSource {
             let chapters = await this.getChaptersByMangaId(mangaId)
             if (!chapters.size) throw "未解析到章节列表"
 
+            let tagsObj = { "作者": authors, "状态": status ? [status] : [], "标签": tags }
+            this.saveData(cacheKey, JSON.stringify({
+                t: Date.now(), title, cover, description: desc,
+                tags: tagsObj, chapters: Object.fromEntries(chapters),
+            }))
+
             return new ComicDetails({
                 id, title, cover, description: desc,
-                tags: { "作者": authors, "状态": status ? [status] : [], "标签": tags },
-                chapters,
+                tags: tagsObj, chapters,
             })
         },
 
         loadEp: async (comicId, epId) => {
-            let res = await Network.get(`${this.base}/manga/${comicId}/${epId}/`, this.pageHeaders())
-            if (res.status !== 200) throw `Invalid status code: ${res.status}`
+            // 章节图片 URL 基本不变，缓存后重读该章不发请求
+            let cacheKey = "ep_" + comicId + "_" + epId
+            let cached = this.loadData(cacheKey)
+            if (cached) {
+                try {
+                    let o = JSON.parse(cached)
+                    if (Array.isArray(o.images) && o.images.length) {
+                        return { images: o.images }
+                    }
+                } catch (e) { }
+            }
+
+            let res = await this.fetchPage(`ep ${comicId}/${epId}`, `${this.base}/manga/${comicId}/${epId}/`)
             let doc = new HtmlDocument(res.body)
             let images = []
             doc.querySelectorAll(".reading-content img").forEach(img => {
@@ -326,7 +392,17 @@ class MangaForFree extends ComicSource {
             })
             doc.dispose()
             if (!images.length) throw "未解析到图片"
+            this.saveData(cacheKey, JSON.stringify({ images }))
             return { images }
+        },
+
+        // 章节图片加 Referer，让 Cloudflare 视作同页内嵌加载，降低拦图概率
+        onImageLoad: (url, comicId, epId) => {
+            return {
+                headers: {
+                    "Referer": `${this.base}/manga/${comicId}/${epId}/`,
+                },
+            }
         },
     }
 
