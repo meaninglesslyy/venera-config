@@ -6,7 +6,7 @@ class XChinaPhoto extends ComicSource {
   key = "xchina_photo";
   version = "1.3.1";
   minAppVersion = "1.6.0";
-  url = "";
+  url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/xChina.js";
 
   get baseUrl() { return "https://xchina.co"; }
   get imgBaseUrl() { return "https://img.xchina.io"; }
