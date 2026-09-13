@@ -192,7 +192,7 @@ class Manga51 extends ComicSource {
   minAppVersion = "1.6.0";
 
   // 更新链接，请替换为你自己的托管地址
-  url = "";
+  url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-configs@main/mangaforfree.js";
 
   get baseUrl() {
     return "https://m.51manga.com";
