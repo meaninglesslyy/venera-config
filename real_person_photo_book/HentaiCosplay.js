@@ -5,7 +5,7 @@ class HentaiCosplay extends ComicSource {
     key = "hentaicosplay"
     version = "1.2.1"
     minAppVersion = "1.6.0"
-    url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/hentaiCosplay.js"
+    url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/HentaiCosplay.js"
     base = "https://hentai-cosplay-xxx.com"
 
     pageHeaders() {
