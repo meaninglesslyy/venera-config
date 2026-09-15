@@ -3,60 +3,10 @@
 class HentaiCosplay extends ComicSource {
     name = "Hentai Cosplay"
     key = "hentaicosplay"
-    version = "1.1.2"
+    version = "1.2.1"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/hentaiCosplay.js"
     base = "https://hentai-cosplay-xxx.com"
-
-    // 预拉取标签列表并缓存，供分类页同步 loader 使用
-    init() {
-        this.refreshTags()
-    }
-
-    async refreshTags() {
-        try {
-            var res = await Network.get(this.base + "/ranking-tag/", this.pageHeaders())
-            if (res.status !== 200) return
-            var tags = []
-            var doc = new HtmlDocument(res.body)
-            var as = doc.querySelectorAll("#tags li a")
-            for (var i = 0; i < as.length; i++) {
-                var href = as[i].attributes.href || ""
-                var m = href.match(/\/search\/tag\/([^/]+)\//)
-                if (!m) continue
-                var slug = m[1]
-                var name = (as[i].text || "").replace(/\s*\(\d+\)\s*$/, "").trim()
-                if (!name) name = slug
-                tags.push({name: name, slug: slug})
-            }
-            doc.dispose()
-            if (tags.length) this.saveData('tags', tags)
-        } catch (e) {}
-    }
-
-    // 缓存没拉到时用的兜底热门标签
-    fallbackTags() {
-        return [
-            {name: "Cosplay", slug: "cosplay"},
-            {name: "Loli", slug: "loli"},
-            {name: "Twitter", slug: "twitter"},
-            {name: "Big Breasts", slug: "big-breasts"},
-            {name: "Sex", slug: "sex"},
-            {name: "Crossdressing", slug: "crossdressing"},
-            {name: "Sex Toys", slug: "sex-toys"},
-            {name: "Anal", slug: "anal"},
-            {name: "Stockings", slug: "stockings"},
-            {name: "Masturbation", slug: "masturbation"},
-            {name: "Big Ass", slug: "big-ass"},
-            {name: "Korean", slug: "korean"},
-            {name: "Genshin Impact", slug: "genshin-impact"},
-            {name: "Bikini", slug: "bikini"},
-            {name: "Onlyfans", slug: "onlyfans"},
-            {name: "Blowjob", slug: "blowjob"},
-            {name: "Machi Maji", slug: "machi-maji"},
-            {name: "Small Breasts", slug: "small-breasts"},
-        ]
-    }
 
     pageHeaders() {
         return {
@@ -155,24 +105,37 @@ class HentaiCosplay extends ComicSource {
         optionList: [],
     }
 
-    // ============ 分类（标签） ============
+    // ============ 分类（标签，按类别分组） ============
     category = {
         title: "Hentai Cosplay",
         parts: [
             {
-                name: "全部标签",
-                type: "dynamic",
-                loader: () => {
-                    var tags = this.loadData('tags')
-                    if (!Array.isArray(tags) || !tags.length) {
-                        tags = this.fallbackTags()
-                        this.refreshTags()
-                    }
-                    return tags.map((t) => ({
-                        label: t.name,
-                        target: { page: "category", attributes: { category: t.name, param: t.slug } },
-                    }))
-                },
+                name: "游戏作品",
+                type: "fixed",
+                itemType: "category",
+                categories: ["Genshin Impact", "Azur Lane", "Fate/Grand Order", "Wuthering Waves", "Honkai:Star Rail", "NIKKE", "Zenless Zone Zero", "Blue Archive", "League Of Legends", "Final Fantasy", "Arknights"],
+                categoryParams: ["genshin-impact", "azur-lane", "fate-grand-order", "wuthering-waves", "honkai-star-rail", "nikke", "zenless-zone-zero", "blue-archive", "league-of-legends", "final-fantasy", "arknights"],
+            },
+            {
+                name: "动漫作品",
+                type: "fixed",
+                itemType: "category",
+                categories: ["Re:Zero", "NieR:Automata", "Sono Bisque Doll", "Spy x Family", "Dead or Alive", "Chainsaw Man", "Demon Slayer", "Evangelion", "Bocchi The Rock", "Overlord"],
+                categoryParams: ["rezero", "nier-automata", "sono-bisque-doll-wa-koi-o-suru-my-dress-up-darling", "spy-x-family", "doa", "chainsaw-man", "kimetsu-no-yaiba", "neon-genesis-evangelion", "bocchi-the-rock", "overlord"],
+            },
+            {
+                name: "Cosplay Freestyle",
+                type: "fixed",
+                itemType: "category",
+                categories: ["Maid", "School Girl", "ELF", "Nun", "Nurse", "Miko", "Cheongsam", "Hololive", "Devil", "Kimono", "Bunny Girl", "Hatsune Miku"],
+                categoryParams: ["maid", "school-girl", "elf", "nun", "nurse", "miko", "cheongsam", "hololive", "devil", "kimono", "bunny-girl", "hatsune-miku"],
+            },
+            {
+                name: "Best Cosplayer",
+                type: "fixed",
+                itemType: "category",
+                categories: ["Machi Maji", "ChuChu Magic", "Tiny Asa", "水淼Aqua", "Byoru", "Umeko J", "Minami", "Rioko", "Tokar 浵卡", "Bangni 邦尼", "Arty Huang", "PoppaChan", "Nekokoyoshi", "Meenfox", "Hoshilily"],
+                categoryParams: ["machi-maji", "chuchu", "tiny-asa", "aqua", "byoru", "umeko-j", "minami", "rioko", "tokar", "bangni-kuni", "arty-huang", "poppachan", "nekokoyoshi", "meenfox", "hoshilily"],
             },
         ],
         enableRankingPage: false,
@@ -204,20 +167,10 @@ class HentaiCosplay extends ComicSource {
                 var cover = ""
                 var cm = r.body.match(/<meta property="og:image" content="([^"]+)"/)
                 if (cm) cover = cm[1]
-                // 解析 tag 列表（#detail_tag 里的 /search/tag/ 链接）
-                var tags = {}
-                var tagList = []
-                var tagRe = /<a href="\/search\/tag\/[^"]+\/">([\s\S]*?)<\/a>/g
-                var tm2
-                while ((tm2 = tagRe.exec(r.body)) !== null) {
-                    var t = tm2[1].replace(/<[^>]+>/g, "").trim()
-                    if (t) tagList.push(t)
-                }
-                if (tagList.length) tags["tag"] = tagList
                 return {
                     title: title || id,
                     cover: cover,
-                    tags: tags,
+                    tags: {},
                     chapters: {"0": "View All Photos"},
                 }
             })
@@ -275,17 +228,6 @@ class HentaiCosplay extends ComicSource {
 
             if (!imgs.length) throw "no images"
             return {images: imgs}
-        },
-
-        // 点击 tag 跳转到标签列表页
-        onClickTag: (namespace, tag) => {
-            return {
-                page: "category",
-                attributes: {
-                    category: tag,
-                    param: tag.toLowerCase().replace(/\s+/g, "-"),
-                },
-            }
         },
     }
 }
