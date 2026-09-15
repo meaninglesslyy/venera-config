@@ -15,20 +15,20 @@ https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/index.json
 https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 ```
 <br><img width="350" height="650" alt="屏幕截图 2026-09-13 144601" src="https://github.com/user-attachments/assets/53c25129-b53f-4f33-bceb-9c74a779fb0c" />
-
+<br>--------------------------------------------------------------------------------------<br> 
 <br><img width="344" height="222" alt="屏幕截图 2026-09-13 144608" src="https://github.com/user-attachments/assets/0c73bdc0-206b-454d-82dc-588e5b250a16" />
-
+<br>--------------------------------------------------------------------------------------<br> 
 <br><img width="345" height="195" alt="屏幕截图 2026-09-13 144615" src="https://github.com/user-attachments/assets/0b3210e5-4520-4e68-963d-36b4230bb15d" />
-
+<br>--------------------------------------------------------------------------------------<br> 
 ## 方法二<br>源文件导入
 下载对应.js文件后导入veneral
   
  导入方式<br>
   漫画源→使用配置文件→选中.js文件打开  
   <img width="350" height="600" alt="图片" src="https://github.com/user-attachments/assets/05c1ffe6-ab0a-4bb4-ad46-19a406c152c7" />
-
+  <br>--------------------------------------------------------------------------------------<br> 
   <img width="478" height="187" alt="Image" src="https://github.com/user-attachments/assets/9628759b-fbd4-471d-b227-ccff9570ece3" />
-  
+  <br>--------------------------------------------------------------------------------------<br> 
 # 分类
 ## [真人图包](https://github.com/meaninglesslyy/venera-config/tree/main/real_person_photo_book)
 - [4khd](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/4khd.js)
