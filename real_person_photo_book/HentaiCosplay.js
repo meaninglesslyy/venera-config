@@ -3,7 +3,7 @@
 class HentaiCosplay extends ComicSource {
     name = "Hentai Cosplay"
     key = "hentaicosplay"
-    version = "1.3.2"
+    version = "2.0.0"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/HentaiCosplay.js"
     base = "https://hentai-cosplay-xxx.com"
@@ -114,36 +114,43 @@ class HentaiCosplay extends ComicSource {
                 name: "游戏作品",
                 type: "fixed",
                 itemType: "category",
-                categories: ["Genshin Impact", "Azur Lane", "Fate/Grand Order", "Wuthering Waves", "Honkai:Star Rail", "NIKKE", "Zenless Zone Zero", "Blue Archive", "League Of Legends", "Final Fantasy", "Arknights"],
-                categoryParams: ["genshin-impact", "azur-lane", "fate-grand-order", "wuthering-waves", "honkai-star-rail", "nikke", "zenless-zone-zero", "blue-archive", "league-of-legends", "final-fantasy", "arknights"],
+                categories: ["原神", "碧蓝航线", "Fate grand order", "鸣潮", "崩坏星穹铁道", "NIKKE", "绝区零", "蔚蓝档案", "英雄联盟", "最终幻想", "明日方舟", "无期迷途", "少女前线", "战双帕弥什", "尘白禁区"],
+                categoryParams: ["genshin-impact|genshin-impact-cos-seishu", "azur-lane|azur-lane-cosplay|azurelane", "fate-grand-order|fate-grand-oder", "wuthering-waves", "honkai-star-rail", "nikke|goddess-of-victory-nikke", "zenless-zone-zero", "blue-archive", "league-of-legends|league|league-cosplay|leagueoflegends", "final-fantasy", "arknights|arknight|ark", "wuqi-mitu-path-to-nowhere", "girls-frontline", "punishing-gray-raven", "snowbreak-containment-zone"],
             },
             {
                 name: "动漫作品",
                 type: "fixed",
                 itemType: "category",
-                categories: ["Re:Zero", "NieR:Automata", "Sono Bisque Doll", "Spy x Family", "Dead or Alive", "Chainsaw Man", "Demon Slayer", "Evangelion", "Bocchi The Rock", "Overlord"],
-                categoryParams: ["rezero", "nier-automata", "sono-bisque-doll-wa-koi-o-suru-my-dress-up-darling", "spy-x-family", "doa", "chainsaw-man", "kimetsu-no-yaiba", "neon-genesis-evangelion", "bocchi-the-rock", "overlord"],
+                categories: ["Re:0", "尼尔机械纪元", "更衣人偶坠入爱河", "间谍过家家", "Dead or Alive", "电锯人", "鬼灭之刃", "EVA", "孤独摇滚", "Overlord", "葬送的芙莉莲", "赛马娘", "莉可丽丝", "无职转生", "海贼王", "火影忍者", "2077"],
+                categoryParams: ["rezero", "nier-automata|nier-cosplay|nierautomata", "sono-bisque-doll-wa-koi-o-suru-my-dress-up-darling", "spy-x-family", "doa", "chainsaw-man", "kimetsu-no-yaiba|demon-slayer|kimetsu-no-yaiba-demon-slayer", "neon-genesis-evangelion|new-century-evangelion|rebuild-of-evangelion", "bocchi-the-rock", "overlord", "frieren|sousou-no-frieren|sousou-no-frieren-frieren-beyond-journeys-end", "uma-musume-pretty-derby", "lycoris-recoil", "mushoku-tensei", "one-piece", "naruto", "cyberpunk"],
+            },
+            {
+                name: "二次元角色",
+                type: "fixed",
+                itemType: "category",
+                categories: ["初音未来", "02", "saber", "蒂法", "甘雨", "八重神子", "胡桃", "雷电将军", "神里绫华", "刻晴", "纳西妲", "芙宁娜", "优菈", "申鹤", "可莉", "银狼", "卡芙卡", "流萤", "希儿", "爱莉希雅", "2B", "A2", "玛奇玛", "帕瓦", "雷姆", "爱蜜莉雅", "明日奈", "白子", "优香", "阿米娅", "波奇酱", "锦木千束", "井上泷奈", "星野爱"],
+                categoryParams: ["miku-hatsune|hatsune-miku|miku-hatsune-cosplay|hatsune", "zerotwo", "saber|artoria|saber-arturia-pendragon", "tifa|tifa-bunny|tifa-lockhart|tifa-cosplay", "ganyu", "yae-miko|yaemiko", "hutao|hu-tao", "raiden-shogun|raiden", "ayaka-kamisato", "keqing", "nahida", "furina|focalors-lady-furina", "eula|eula-lawrence", "shenhe", "klee", "silver-wolf", "kafka", "firefly", "seele-vollerei|seele-oats", "elysia", "2b|2b-permit|2b-succubus", "a2", "makima", "power", "rem", "emilia|emilia-re-zero", "asuna|asuna-ichinose", "shiroko-sunaookami", "yuuka-kazami", "amiya", "hitori-gotou", "chisato|chisato-nishikigi", "takina-inoue", "ai"],
             },
             {
                 name: "Cosplay Freestyle",
                 type: "fixed",
                 itemType: "category",
-                categories: ["Maid", "Schoolgirl Uniform", "ELF", "Nun", "Nurse", "Miko", "Cheongsam", "Hololive", "Devil", "Kimono", "Bunny Girl", "Hatsune Miku"],
-                categoryParams: ["maid", "schoolgirl-uniform", "elf", "nun", "nurse", "miko", "cheongsam", "hololive", "devil", "kimono", "bunny-girl", "miku-hatsune"],
+                categories: ["女仆", "校服", "精灵", "修女", "护士", "巫女", "旗袍", "恶魔", "和服", "兔女郎"],
+                categoryParams: ["maid", "schoolgirl-uniform", "elf", "nun", "nurse", "miko", "cheongsam", "devil", "kimono", "bunny-girl"],
             },
             {
                 name: "Best Cosplayer",
                 type: "fixed",
                 itemType: "category",
-                categories: ["Machi Maji", "chuchu", "Tiny Asa", "水淼Aqua", "Byoru", "Umeko J", "Minami", "Rioko", "Tokar 浵卡", "Bangni 邦尼", "Arty Huang", "PoppaChan", "Nekokoyoshi", "Meenfox", "Hoshilily"],
-                categoryParams: ["machi-maji", "chuchu", "tiny-asa", "aqua", "byoru", "umeko-j", "minami", "rioko", "tokar", "bangni-kuni", "arty-huang", "poppachan", "nekokoyoshi", "meenfox", "hoshilily"],
+                categories: ["Machi 马吉", "chuchu", "Tiny Asa", "水淼 Aqua", "Byoru", "Umeko J", "Minami", "Rioko 凉凉子", "Tokar 浵卡", "Bangni 邦尼", "Arty Huang", "PoppaChan", "爆机少女喵小吉", "Meenfox", "星之迟迟","cinderella", "kagurazaka"],
+                categoryParams: ["machi-maji", "chuchu", "tiny-asa", "aqua", "byoru", "umeko-j", "minami", "rioko", "tokar", "bangni-kuni", "arty-huang", "poppachan", "nekokoyoshi", "meenfox", "hoshilily| --", "cinderella", "kagurazaka"],
             },
             {
                 name: "Others",
                 type: "fixed",
                 itemType: "category",
-                categories: ["JKF", "萝莉", "Korean", "Japanese", "黑丝", "白丝", "丝袜", "JK", "泳装"],
-                categoryParams: ["jkf", "luo-li", "korean", "japanese", "black-", "white-", "-", "jk", "water"],
+                categories: ["JKF", "萝莉", "韩系", "日系", "黑丝", "白丝", "肉丝", "丝袜", "JK", "泳装"],
+                categoryParams: ["jkf|jkfun|jkfun-gg", "luo-li", "korean", "japanese", "black-", "white-", "meat-", "-", "jk", "water"],
             },
         ],
         enableRankingPage: false,
@@ -151,10 +158,31 @@ class HentaiCosplay extends ComicSource {
 
     categoryComics = {
         load: (category, param, options, page) => {
-            var url = this.base + "/search/tag/" + param + "/" + (page > 1 ? "page/" + page + "/" : "")
-            return Network.get(url, this.pageHeaders()).then((r) => {
-                if (r.status !== 200) throw "err"
-                return {comics: this.parseList(r.body), maxPage: this.maxPageFrom(r.body, page)}
+            // 支持多 tag 聚合：param 用 | 分隔多个 tag slug
+            var self = this
+            var slugs = (param || "").split("|").map((s) => s.trim())
+            var tasks = slugs.map((slug) => {
+                var url = self.base + "/search/tag/" + slug + "/" + (page > 1 ? "page/" + page + "/" : "")
+                return Network.get(url, self.pageHeaders()).then((r) => {
+                    if (r.status !== 200) return {comics: [], maxPage: 1}
+                    return {comics: self.parseList(r.body), maxPage: self.maxPageFrom(r.body, page)}
+                }).catch(() => {
+                    return {comics: [], maxPage: 1}
+                })
+            })
+            return Promise.all(tasks).then((results) => {
+                var comics = []
+                var seen = {}
+                var maxPage = 1
+                for (var i = 0; i < results.length; i++) {
+                    var list = results[i].comics
+                    for (var j = 0; j < list.length; j++) {
+                        var c = list[j]
+                        if (!seen[c.id]) { seen[c.id] = true; comics.push(c) }
+                    }
+                    if (results[i].maxPage > maxPage) maxPage = results[i].maxPage
+                }
+                return {comics: comics, maxPage: maxPage}
             })
         },
     }
