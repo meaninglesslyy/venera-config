@@ -3,7 +3,7 @@
 class HentaiCosplay extends ComicSource {
     name = "Hentai Cosplay"
     key = "hentaicosplay"
-    version = "1.2.1"
+    version = "1.3.2"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/HentaiCosplay.js"
     base = "https://hentai-cosplay-xxx.com"
@@ -24,11 +24,12 @@ class HentaiCosplay extends ComicSource {
         return url.replace(/\/p=\d+(?:x\d+)?\//, "/p=700/")
     }
 
-    // 解析列表页（.image-list-item 块）
+    // 解析列表页（只取主结果区，即第一个 #image-list，避开页面下方混入的推荐区）
     parseList(html) {
         var c = []
         var doc = new HtmlDocument(html)
-        var items = doc.querySelectorAll(".image-list-item")
+        var list = doc.querySelector("#image-list")
+        var items = list ? list.querySelectorAll(".image-list-item") : []
         for (var i = 0; i < items.length; i++) {
             var it = items[i]
             var a = it.querySelector(".image-list-item-image a")
@@ -127,15 +128,22 @@ class HentaiCosplay extends ComicSource {
                 name: "Cosplay Freestyle",
                 type: "fixed",
                 itemType: "category",
-                categories: ["Maid", "School Girl", "ELF", "Nun", "Nurse", "Miko", "Cheongsam", "Hololive", "Devil", "Kimono", "Bunny Girl", "Hatsune Miku"],
-                categoryParams: ["maid", "school-girl", "elf", "nun", "nurse", "miko", "cheongsam", "hololive", "devil", "kimono", "bunny-girl", "hatsune-miku"],
+                categories: ["Maid", "Schoolgirl Uniform", "ELF", "Nun", "Nurse", "Miko", "Cheongsam", "Hololive", "Devil", "Kimono", "Bunny Girl", "Hatsune Miku"],
+                categoryParams: ["maid", "schoolgirl-uniform", "elf", "nun", "nurse", "miko", "cheongsam", "hololive", "devil", "kimono", "bunny-girl", "miku-hatsune"],
             },
             {
                 name: "Best Cosplayer",
                 type: "fixed",
                 itemType: "category",
-                categories: ["Machi Maji", "ChuChu Magic", "Tiny Asa", "水淼Aqua", "Byoru", "Umeko J", "Minami", "Rioko", "Tokar 浵卡", "Bangni 邦尼", "Arty Huang", "PoppaChan", "Nekokoyoshi", "Meenfox", "Hoshilily"],
+                categories: ["Machi Maji", "chuchu", "Tiny Asa", "水淼Aqua", "Byoru", "Umeko J", "Minami", "Rioko", "Tokar 浵卡", "Bangni 邦尼", "Arty Huang", "PoppaChan", "Nekokoyoshi", "Meenfox", "Hoshilily"],
                 categoryParams: ["machi-maji", "chuchu", "tiny-asa", "aqua", "byoru", "umeko-j", "minami", "rioko", "tokar", "bangni-kuni", "arty-huang", "poppachan", "nekokoyoshi", "meenfox", "hoshilily"],
+            },
+            {
+                name: "Others",
+                type: "fixed",
+                itemType: "category",
+                categories: ["JKF", "萝莉", "Korean", "Japanese", "黑丝", "白丝", "丝袜", "JK", "泳装"],
+                categoryParams: ["jkf", "luo-li", "korean", "japanese", "black-", "white-", "-", "jk", "water"],
             },
         ],
         enableRankingPage: false,
