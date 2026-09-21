@@ -28,6 +28,13 @@
         "description": "真人图包"
     },
     {
+        "name": "JJcos",
+        "fileName": "real_person_photo_book/jjcos.js",
+        "key": "jjcos",
+        "version": "1.1.0",
+        "description": "真人图包"
+    },
+    {
         "name": "51漫画",
         "fileName": "normal_comic/51manga.js",
         "key": "manga51",
