@@ -34,6 +34,7 @@ https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 - [4khd](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/4khd.js)
 - [cosplaytele](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/cosplaytele.js)
 - [HentaiCosplay](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/HentaiCosplay.js)
+- [JJCOS](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/jjcos.js)
 
 ## [生肉](https://github.com/meaninglesslyy/venera-config/tree/main/raw_comic)
 - [mangaforfree](https://github.com/meaninglesslyy/venera-config/blob/main/raw_comic/mangaforfree.js)
