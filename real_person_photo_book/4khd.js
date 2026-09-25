@@ -1,37 +1,5 @@
 /** @type {import('../../venera-configs/_venera_.js')} */
 
-/**
- * 4KHD v2 —— 全面升级版
- *
- * 对比 v1 的改动：
- * 1. 数据源从 HTML 抓取 → WordPress REST API（/wp/v2/posts）
- * 2. 分页从解析 .page-numbers → 读 X-WP-TotalPages 响应头
- * 3. 图片从递归抓 .html/N → 一次请求拿全套图
- * 4. 封面用 jetpack_featured_media_url / featuredmedia；标签用 _embedded.wp:term
- *
- * v2.0.1 修复：
- * - 图片 URL 不再「脱壳重写」。API 返回的 i0.wp.com/pic.4khd.com/xxx 是 Jetpack Photon 图床，
- *   直接返回 200 图片；之前改写成的 pic.4khd.com/xxx 会 301 跳到 Google(yt4.googleusercontent.com)，
- *   被墙 → app 报 Exception: Invalid image data。现在直接用原 URL。
- * - 补上分类页（沿用老版本的 fixed 结构，映射 WP categories：热门=21 / Cosplay=4 / 写真=3）。
- *
- * v2.0.2 修复（阅读页全空图）：
- * - 【根因】站点把 WP REST API 的 content.rendered 掏空了：现在所有帖子（含老帖）都只返回
- *   `<p>{slug}</p>` 这种 19 字节占位串，一张 <img> 都没有。loadEp 从 content 抓图必然空 →
- *   抛 "no images" → 阅读页全白，同时封面也空 → app 刷一串
- *   `relative URL without a base`（空 URL 直接丢给 Network）。
- * - 【对策 1】loadEp 改为抓「内容页 HTML」：/{contentBase}/content/{slug}.html，从
- *   .entry-content 里取 img[data-src|data-lazy-src|src]（选择器照抄 Tachiyomi 扩展的解析逻辑）。
- *   API 的 content 只作为兜底。
- * - 【对策 2】域名自动发现。站点现在用随机 uuss.uk 子域轮换，而且 **API 域和内容页域不是同一个**
- *   （实测：API 在 hecoq.uuss.uk，内容页在 kcqt.uuss.uk）。入口 4khd.com 会 302 到当前入口，
- *   从入口首页 HTML 里同时抓出这两个域。发现失败时回落到下面的默认常量。
- * - 【对策 3】JSON 容错解析。站点某些请求会在 JSON 前面吐一段 PHP Warning
- *   （class-wp-hook.php 的 `_return_false` not found），直接 JSON.parse 会抛，现在先定位首个 [ 或 {。
- * - 【对策 4】封面/图片空值兜底，绝不再把空字符串塞进 images 数组。
- *
- * ⚠️ 域名轮换：4khd.com / www.4khd.com / pic.4khd.com 现在都 302 到 uuss.uk 系的随机子域。
- */
 class FourKHDv2 extends ComicSource {
     name = "4KHD"
     key = "fourkhd"
