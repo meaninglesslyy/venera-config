@@ -1,10 +1,17 @@
 class CosplayTele extends ComicSource {
     name = "CosplayTele"
     key = "cosplaytele"
-    version = "1.6.1"
+    version = "1.7.0"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/cosplaytele.js"
     base = "https://cosplaytele.com"
+    api = "https://cosplaytele.com/wp-json/wp/v2"
+
+    // 站点自有图标，保证 cover 永不为空串（空串会让下载流程抛 relative URL without a base）
+    fallbackCover = "https://cosplaytele.com/wp-content/uploads/2024/01/cropped-icon-cosplaytele-1-270x270.png"
+
+    // WPP nonce 从页面 data-token 动态取，取不到再退回旧值
+    _wppToken = null
 
     pageHeaders() {
         return {
@@ -13,6 +20,33 @@ class CosplayTele extends ComicSource {
             "Accept-Language": "en-US,en;q=0.9",
             "Referer": this.base + "/",
         }
+    }
+
+    // ============ 基础工具 ============
+
+    // 把任意 URL 规整成绝对地址。空值返回 ""，调用方负责兜底。
+    // 这是修复 "relative URL without a base" 的核心：Dio 只吃带 scheme 的绝对地址。
+    abs(u) {
+        if (!u) return ""
+        u = String(u).trim().replace(/&amp;/g, "&")
+        if (!u || u.indexOf("data:") === 0 || u.indexOf("javascript:") === 0) return ""
+        if (/^https?:\/\//i.test(u)) return u
+        if (u.indexOf("//") === 0) return "https:" + u
+        if (u.indexOf("/") === 0) return this.base + u
+        return this.base + "/" + u
+    }
+
+    // HTML 实体解码 + 去标签
+    decodeEntities(s) {
+        return String(s == null ? "" : s)
+            .replace(/<[^>]+>/g, "")
+            .replace(/&#8211;/g, "–").replace(/&#8212;/g, "—")
+            .replace(/&#8216;/g, "‘").replace(/&#8217;/g, "’")
+            .replace(/&#8220;/g, "“").replace(/&#8221;/g, "”")
+            .replace(/&#0?39;/g, "'").replace(/&quot;/g, '"')
+            .replace(/&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+            .replace(/&amp;/g, "&")
+            .trim()
     }
 
     // 安全地执行 querySelectorAll，避免 null 崩溃
@@ -34,108 +68,135 @@ class CosplayTele extends ComicSource {
         }
     }
 
-    // 提取封面 URL（从 og:image meta）
+    // ============ 封面提取 ============
+    // 该站 Yoast 不输出 og:/twitter: 标签，旧实现永远返回空串 —— 下载时炸 Dio。
+    // 现在按 4 级兜底，保证任何路径都吐绝对地址。
     extractCover(body) {
-        var m = body.match(/<meta property="og:image" content="([^"]+)"/)
-        if (m) return m[1]
-        m = body.match(/<meta name="twitter:image" content="([^"]+)"/)
-        if (m) return m[1]
-        return ""
+        if (!body) return this.fallbackCover
+        // 1) og:image / twitter:image（属性顺序两种都试）
+        var m = body.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+            || body.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
+            || body.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
+            || body.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i)
+        if (m && this.abs(m[1])) return this.abs(m[1])
+        // 2) 正文 .entry-content 里的第一张图
+        var d = new HtmlDocument(body)
+        try {
+            var content = this.safeQuery(d, ".entry-content")
+            if (content) {
+                var imgs = this.safeQueryAll(content, "img")
+                for (var i = 0; i < imgs.length; i++) {
+                    var a = imgs[i].attributes || {}
+                    var src = a["src"] || a["data-src"] || a["data-lazy-src"] || ""
+                    if (/\.(jpg|jpeg|png|webp)/i.test(src)) {
+                        var abs1 = this.abs(src)
+                        if (abs1) return abs1
+                    }
+                }
+            }
+        } catch (e) {
+        } finally {
+            d.dispose()
+        }
+        // 3) 站点图标 meta
+        var t = body.match(/<meta[^>]+name=["']msapplication-TileImage["'][^>]+content=["']([^"']+)["']/i)
+        if (t && this.abs(t[1])) return this.abs(t[1])
+        // 4) 兜底，绝不返回空串
+        return this.fallbackCover
     }
 
-    // 解析搜索结果的 HTML
+    // 从 WP REST post 对象取封面（featured media），取不到退回正文首图
+    coverFromPost(post) {
+        try {
+            var fm = post._embedded && post._embedded["wp:featuredmedia"]
+            if (fm && fm[0] && fm[0].source_url) {
+                var a = this.abs(fm[0].source_url)
+                if (a) return a
+            }
+        } catch (e) {
+        }
+        try {
+            var c = post.content && post.content.rendered
+            if (c) {
+                var m = c.match(/<img[^>]+src=["']([^"']+\.(?:jpg|jpeg|png|webp))["']/i)
+                if (m) {
+                    var a2 = this.abs(m[1])
+                    if (a2) return a2
+                }
+            }
+        } catch (e) {
+        }
+        return this.fallbackCover
+    }
+
+    // WP REST post -> comic 精简对象
+    parsePost(post) {
+        var slug = post.slug || ""
+        var title = this.decodeEntities(post.title && post.title.rendered ? post.title.rendered : "")
+        if (!slug || !title) return null
+        return {id: slug, title: title, cover: this.coverFromPost(post)}
+    }
+
+    // 从响应头拿总页数
+    totalPages(r, p, count, perPage) {
+        var maxPage = p
+        try {
+            if (r.headers && r.headers["x-wp-totalpages"]) {
+                maxPage = parseInt(r.headers["x-wp-totalpages"]) || 1
+            } else if (r.responseHeaders) {
+                var tp = r.responseHeaders.match(/x-wp-totalpages:\s*(\d+)/i)
+                if (tp) maxPage = parseInt(tp[1]) || 1
+            }
+        } catch (e) {
+        }
+        if (maxPage === p) {
+            maxPage = (count < (perPage || 20)) ? p : 500
+        }
+        return maxPage
+    }
+
+    // ============ 搜索 ============
     parseSearchResults(html, totalCount) {
-        // 注意：搜索结果 HTML 中的 URL 是转义的，需要处理
         var c = []
-        // 匹配每个搜索结果的 item 块
+        var seen = {}
         var itemRe = /<div class='item asl_r_pagepost asl_r_pagepost_\d+ asl_r_post'>([\s\S]*?)<\/div>\s*<div class='clear'><\/div>\s*<\/div>/g
         var itemMatch
         while ((itemMatch = itemRe.exec(html)) !== null) {
             var itemHtml = itemMatch[1]
-            // 提取封面图
             var imgRe = /<img[^>]+src=['"]([^'"]+)['"]/
             var imgMatch = imgRe.exec(itemHtml)
-            var cover = imgMatch ? imgMatch[1].replace(/\\\//g, "/") : ""
-            // 提取标题和链接
+            var cover = imgMatch ? this.abs(imgMatch[1].replace(/\\\//g, "/")) : this.fallbackCover
             var linkRe = /<a class="asl_res_url" href='([^']+)'>([\s\S]*?)<\/a>/
             var linkMatch = linkRe.exec(itemHtml)
             if (!linkMatch) continue
             var href = linkMatch[1].replace(/\\\//g, "/")
-            var title = linkMatch[2].replace(/<[^>]+>/g, "").replace(/&#8211;/g, "-").replace(/&#8220;/g, "\u201c").replace(/&#8221;/g, "\u201d").trim()
-            // 提取 slug 作为 id
-            var slug = href.replace("https://cosplaytele.com/", "").replace(/\/$/, "")
-            if (slug && title) {
-                c.push({id: slug, title: title, cover: cover})
+            var title = this.decodeEntities(linkMatch[2])
+            var slug = href.replace(this.base + "/", "").replace(/\/$/, "")
+            if (slug && title && !seen[slug]) {
+                seen[slug] = true
+                c.push({id: slug, title: title, cover: cover || this.fallbackCover})
             }
         }
-        // 如果正则没匹配到，尝试另一种方式
         if (c.length === 0) {
-            // 简单方式：找所有 asl_res_url
             var simpleRe = /<a class="asl_res_url" href='([^']+)'>([\s\S]*?)<\/a>/g
             var simpleMatch
             while ((simpleMatch = simpleRe.exec(html)) !== null) {
-                var href = simpleMatch[1].replace(/\\\//g, "/")
-                var title = simpleMatch[2].replace(/<[^>]+>/g, "").replace(/&#8211;/g, "-").replace(/&#8220;/g, "\u201c").replace(/&#8221;/g, "\u201d").trim()
-                var slug = href.replace("https://cosplaytele.com/", "").replace(/\/$/, "")
-                if (slug && title) {
-                    c.push({id: slug, title: title, cover: ""})
+                var href2 = simpleMatch[1].replace(/\\\//g, "/")
+                var title2 = this.decodeEntities(simpleMatch[2])
+                var slug2 = href2.replace(this.base + "/", "").replace(/\/$/, "")
+                if (slug2 && title2 && !seen[slug2]) {
+                    seen[slug2] = true
+                    c.push({id: slug2, title: title2, cover: this.fallbackCover})
                 }
             }
         }
-        // 计算最大页数（每页10条）
-        var maxPage = Math.ceil(totalCount / 10) || 1
-        return {comics: c, maxPage: maxPage}
+        return {comics: c, maxPage: Math.ceil((totalCount || 0) / 10) || 1}
     }
 
-    // 解析热门文章列表
-    parsePopularList(html) {
-        var c = []
-        // 匹配 wpp-list 中的每个 li
-        var itemRe = /<li[^>]*>([\s\S]*?)<\/li>/g
-        var itemMatch
-        while ((itemMatch = itemRe.exec(html)) !== null) {
-            var itemHtml = itemMatch[1]
-            // 提取封面图
-            var imgRe = /<img[^>]+src=["']([^"']+)["']/
-            var imgMatch = imgRe.exec(itemHtml)
-            var cover = imgMatch ? imgMatch[1] : ""
-            // 提取标题和链接
-            var linkRe = /<a[^>]+href=["']([^"']+)["'][^>]*class=["']wpp-post-title["'][^>]*>([\s\S]*?)<\/a>/
-            var linkMatch = linkRe.exec(itemHtml)
-            if (!linkMatch) {
-                // 尝试简单方式
-                linkRe = /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/g
-                var links = []
-                while ((linkMatch = linkRe.exec(itemHtml)) !== null) {
-                    links.push(linkMatch)
-                }
-                // 第一个 a 是封面链接，第二个是标题链接
-                if (links.length >= 2) {
-                    var href = links[1][1]
-                    var title = links[1][2].replace(/<[^>]+>/g, "").trim()
-                } else if (links.length >= 1) {
-                    var href = links[0][1]
-                    var title = links[0][2].replace(/<[^>]+>/g, "").trim()
-                } else {
-                    continue
-                }
-            } else {
-                var href = linkMatch[1]
-                var title = linkMatch[2].replace(/<[^>]+>/g, "").trim()
-            }
-            var slug = href.replace("https://cosplaytele.com/", "").replace(/\/$/, "")
-            if (slug && title) {
-                c.push({id: slug, title: title, cover: cover})
-            }
-        }
-        return {comics: c, maxPage: 1}
-    }
-
-    // ============ 搜索（箭头函数） ============
     search = {
         load: (k, o, p) => {
             var body = "action=ajaxsearchlite_search&aslp=" + encodeURIComponent(k) + "&asid=1&options=customset%5B%5D%3Dpost%26asl_gen%5B%5D%3Dtitle%26qtranslate_lang%3D0%26filters_initial%3D1%26filters_changed%3D0&asl_req_json=1"
-            return Network.post("https://cosplaytele.com/wp-admin/admin-ajax.php", {
+            return Network.post(this.base + "/wp-admin/admin-ajax.php", {
                 "Content-type": "application/x-www-form-urlencoded; charset=UTF-8",
                 "Accept": "text/html"
             }, body).then((r) => {
@@ -149,40 +210,63 @@ class CosplayTele extends ComicSource {
         optionList: []
     }
 
-    // ============ 解析 Top View 列表 ============
+    // ============ 热门榜（WPP） ============
+    // 旧的 X-WP-Nonce 是硬编码的，会过期。改为从首页 data-token 动态取并缓存。
+    getWppToken(html) {
+        var m = html.match(/data-token=["']([^"']+)["']/)
+        return m ? m[1] : null
+    }
+
+    ensureWppToken() {
+        var self = this
+        if (self._wppToken) return Promise.resolve(self._wppToken)
+        return Network.get(self.base + "/", self.pageHeaders()).then((r) => {
+            if (r.status === 200) {
+                var t = self.getWppToken(r.body)
+                if (t) self._wppToken = t
+            }
+            return self._wppToken || "848c6cd23e"
+        }).catch(() => {
+            return self._wppToken || "848c6cd23e"
+        })
+    }
+
     parseTopList(html) {
         var c = []
+        var seen = {}
         var itemRe = /<li[^>]*>([\s\S]*?)<\/li>/g
         var itemMatch
         while ((itemMatch = itemRe.exec(html)) !== null) {
             var itemHtml = itemMatch[1]
             var imgRe = /<img[^>]+src=["']([^"']+)["']/
             var imgMatch = imgRe.exec(itemHtml)
-            var cover = imgMatch ? imgMatch[1] : ""
+            var cover = imgMatch ? this.abs(imgMatch[1]) : ""
+            var href = ""
+            var title = ""
             var linkRe = /<a[^>]+href=["']([^"']+)["'][^>]*class=["']wpp-post-title["'][^>]*>([\s\S]*?)<\/a>/
             var linkMatch = linkRe.exec(itemHtml)
-            if (!linkMatch) {
-                linkRe = /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/g
+            if (linkMatch) {
+                href = linkMatch[1]
+                title = this.decodeEntities(linkMatch[2])
+            } else {
+                var gRe = /<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/g
                 var links = []
-                while ((linkMatch = linkRe.exec(itemHtml)) !== null) {
-                    links.push(linkMatch)
-                }
+                var mm
+                while ((mm = gRe.exec(itemHtml)) !== null) links.push(mm)
                 if (links.length >= 2) {
-                    var href = links[1][1]
-                    var title = links[1][2].replace(/<[^>]+>/g, "").trim()
+                    href = links[1][1]
+                    title = this.decodeEntities(links[1][2])
                 } else if (links.length >= 1) {
-                    var href = links[0][1]
-                    var title = links[0][2].replace(/<[^>]+>/g, "").trim()
+                    href = links[0][1]
+                    title = this.decodeEntities(links[0][2])
                 } else {
                     continue
                 }
-            } else {
-                var href = linkMatch[1]
-                var title = linkMatch[2].replace(/<[^>]+>/g, "").trim()
             }
-            var slug = href.replace("https://cosplaytele.com/", "").replace(/\/$/, "")
-            if (slug && title) {
-                c.push({id: slug, title: title, cover: cover})
+            var slug = href.replace(this.base + "/", "").replace(/\/$/, "")
+            if (slug && title && !seen[slug]) {
+                seen[slug] = true
+                c.push({id: slug, title: title, cover: cover || this.fallbackCover})
             }
         }
         return {comics: c, maxPage: 1}
@@ -240,34 +324,40 @@ class CosplayTele extends ComicSource {
 
     categoryComics = {
         load: (cat, param, options, p) => {
-            // Top View 分类：使用 WPP API
+            var self = this
+            // Top View 分类：WPP API
             if (param.indexOf("top-") === 0) {
                 var rangeMap = {"top-24h": "daily", "top-3d": "daily", "top-7d": "weekly"}
                 var timeQtyMap = {"top-24h": 24, "top-3d": 72, "top-7d": 168}
-                var range = rangeMap[param] || "daily"
-                var timeQty = timeQtyMap[param] || 24
                 var requestBody = JSON.stringify({
-                    title: "", limit: "20", offset: 0, range: range, time_quantity: timeQty, time_unit: "hour",
+                    title: "", limit: "20", offset: 0,
+                    range: rangeMap[param] || "daily",
+                    time_quantity: timeQtyMap[param] || 24, time_unit: "hour",
                     freshness: false, order_by: "views", post_type: "post", pid: "", exclude: "", cat: "",
                     taxonomy: "category", term_id: "", author: "",
                     shorten_title: {active: false, length: 0, words: false},
                     "post-excerpt": {active: false, length: 0, keep_format: false, words: false},
                     thumbnail: {active: true, build: "manual", width: "1920", height: "1080"},
-                    rating: false, stats_tag: {comment_count: false, views: "1", author: false, date: {active: false, format: "F j, Y"}, category: false, taxonomy: {active: false, name: "category"}},
+                    rating: false,
+                    stats_tag: {comment_count: false, views: "1", author: false, date: {active: false, format: "F j, Y"}, category: false, taxonomy: {active: false, name: "category"}},
                     markup: {custom_html: true, "wpp-start": "<ul class=\"wpp-list\">", "wpp-end": "</ul>", "title-start": "<h2>", "title-end": "</h2>", "post-html": "<li class=\"{current_class}\">{thumb} {title} <span class=\"wpp-meta post-stats\">{stats}</span><p class=\"wpp-excerpt\">{excerpt}</p></li>"},
                     theme: {name: ""}
                 })
-                return Network.post("https://cosplaytele.com/wp-json/wordpress-popular-posts/v2/widget", {
-                    "X-Requested-With": "XMLHttpRequest", "Content-Type": "application/json", "X-WP-Nonce": "848c6cd23e"
-                }, requestBody).then((r) => {
+                return self.ensureWppToken().then((token) => {
+                    return Network.post(self.base + "/wp-json/wordpress-popular-posts/v2/widget", {
+                        "X-Requested-With": "XMLHttpRequest",
+                        "Content-Type": "application/json",
+                        "X-WP-Nonce": token
+                    }, requestBody)
+                }).then((r) => {
                     if (r.status !== 200) throw "err"
                     var json = JSON.parse(r.body)
-                    return this.parseTopList(json.widget || "")
+                    return self.parseTopList(json.widget || "")
                 }).catch(() => {
                     return {comics: [], maxPage: 1}
                 })
             }
-            // 普通分类/标签：使用 WordPress REST API
+            // 普通分类/标签：WP REST API
             var catMap = {
                 "cosplay-nude": {id: 193, type: "category"}, "free-style": {id: 400, type: "category"},
                 "cosplay-ero": {id: 194, type: "category"}, "game": {id: 398, type: "category"},
@@ -304,53 +394,17 @@ class CosplayTele extends ComicSource {
                 "sweetrabbit233": {id: 803, type: "category"}
             }
             var info = catMap[param] || {id: 193, type: "category"}
-            var url = ""
-            if (info.type === "tag") {
-                url = "https://cosplaytele.com/wp-json/wp/v2/posts?tags=" + info.id + "&page=" + p + "&per_page=20&_embed"
-            } else {
-                url = "https://cosplaytele.com/wp-json/wp/v2/posts?categories=" + info.id + "&page=" + p + "&per_page=20&_embed"
-            }
+            var key = info.type === "tag" ? "tags" : "categories"
+            var url = self.api + "/posts?" + key + "=" + info.id + "&page=" + p + "&per_page=20&_embed"
             return Network.get(url, {}).then((r) => {
                 if (r.status !== 200) throw "err"
                 var posts = JSON.parse(r.body)
                 var c = []
                 for (var i = 0; i < posts.length; i++) {
-                    var post = posts[i]
-                    var slug = post.slug || ""
-                    var title = post.title ? post.title.rendered : ""
-                    // 去除 HTML 标签
-                    title = title.replace(/<[^>]+>/g, "").replace(/&#8211;/g, "-").replace(/&#8220;/g, "\u201c").replace(/&#8221;/g, "\u201d").trim()
-                    // 提取封面
-                    var cover = ""
-                    if (post._embedded && post._embedded["wp:featuredmedia"] && post._embedded["wp:featuredmedia"][0]) {
-                        cover = post._embedded["wp:featuredmedia"][0].source_url || ""
-                    }
-                    if (slug && title) {
-                        c.push({id: slug, title: title, cover: cover})
-                    }
+                    var item = self.parsePost(posts[i])
+                    if (item) c.push(item)
                 }
-                // 尝试从响应头获取总页数
-                var maxPage = p
-                try {
-                    // 尝试从响应头获取 X-WP-TotalPages
-                    if (r.headers && r.headers["x-wp-totalpages"]) {
-                        maxPage = parseInt(r.headers["x-wp-totalpages"]) || 1
-                    } else if (r.responseHeaders) {
-                        var hdrs = r.responseHeaders
-                        var tpMatch = hdrs.match(/x-wp-totalpages:\s*(\d+)/i)
-                        if (tpMatch) maxPage = parseInt(tpMatch[1]) || 1
-                    }
-                } catch (e) {}
-                // 如果获取不到，根据返回数量估算
-                if (maxPage === p) {
-                    if (c.length < 20) {
-                        maxPage = p
-                    } else {
-                        // 无法获取总页数时，给一个足够大的值
-                        maxPage = 500
-                    }
-                }
-                return {comics: c, maxPage: maxPage}
+                return {comics: c, maxPage: self.totalPages(r, p, c.length, 20)}
             }).catch(() => {
                 return {comics: [], maxPage: p}
             })
@@ -363,42 +417,17 @@ class CosplayTele extends ComicSource {
             title: "Cosplaytele",
             type: "multiPageComicList",
             load: (p) => {
-                var url = "https://cosplaytele.com/wp-json/wp/v2/posts?page=" + p + "&per_page=20&_embed&orderby=date&order=desc"
+                var self = this
+                var url = self.api + "/posts?page=" + p + "&per_page=20&_embed&orderby=date&order=desc"
                 return Network.get(url, {}).then((r) => {
                     if (r.status !== 200) throw "err"
                     var posts = JSON.parse(r.body)
                     var c = []
                     for (var i = 0; i < posts.length; i++) {
-                        var post = posts[i]
-                        var slug = post.slug || ""
-                        var title = post.title ? post.title.rendered : ""
-                        title = title.replace(/<[^>]+>/g, "").replace(/&#8211;/g, "-").replace(/&#8220;/g, "\u201c").replace(/&#8221;/g, "\u201d").trim()
-                        var cover = ""
-                        if (post._embedded && post._embedded["wp:featuredmedia"] && post._embedded["wp:featuredmedia"][0]) {
-                            cover = post._embedded["wp:featuredmedia"][0].source_url || ""
-                        }
-                        if (slug && title) {
-                            c.push({id: slug, title: title, cover: cover})
-                        }
+                        var item = self.parsePost(posts[i])
+                        if (item) c.push(item)
                     }
-                    var maxPage = p
-                    try {
-                        if (r.headers && r.headers["x-wp-totalpages"]) {
-                            maxPage = parseInt(r.headers["x-wp-totalpages"]) || 1
-                        } else if (r.responseHeaders) {
-                            var hdrs = r.responseHeaders
-                            var tpMatch = hdrs.match(/x-wp-totalpages:\s*(\d+)/i)
-                            if (tpMatch) maxPage = parseInt(tpMatch[1]) || 1
-                        }
-                    } catch (e) {}
-                    if (maxPage === p) {
-                        if (c.length < 20) {
-                            maxPage = p
-                        } else {
-                            maxPage = 500
-                        }
-                    }
-                    return {comics: c, maxPage: maxPage}
+                    return {comics: c, maxPage: self.totalPages(r, p, c.length, 20)}
                 }).catch(() => {
                     return {comics: [], maxPage: p}
                 })
@@ -408,68 +437,109 @@ class CosplayTele extends ComicSource {
 
     // ============ 详情 / 图片 ============
     comic = {
+        // 详情优先走 REST（封面必有 featured media），失败再退回抓页面
         loadInfo: (id) => {
-            var url = "https://cosplaytele.com/" + id + "/"
-            return Network.get(url, this.pageHeaders()).then((r) => {
+            var self = this
+            var apiUrl = self.api + "/posts?slug=" + encodeURIComponent(id) + "&_embed"
+            return Network.get(apiUrl, self.pageHeaders()).then((r) => {
                 if (r.status !== 200) throw "err"
-                // 从 og:title 和 og:image 提取
-                var title = ""
-                var titleM = r.body.match(/<meta property="og:title" content="([^"]+)"/)
-                if (titleM) title = titleM[1]
-                if (!title) {
-                    var h1M = r.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)
-                    if (h1M) title = h1M[1].replace(/<[^>]+>/g, "").trim()
+                var posts = JSON.parse(r.body)
+                if (!posts || !posts.length) throw "err"
+                var post = posts[0]
+                var title = self.decodeEntities(post.title && post.title.rendered ? post.title.rendered : id)
+                return {
+                    id: id,
+                    title: title || id,
+                    cover: self.coverFromPost(post),
+                    tags: {},
+                    chapters: {"0": "View All Photos"}
                 }
-                var cover = this.extractCover(r.body)
-                return {id: id, title: title || id, cover: cover, tags: {}, chapters: {"0": "View All Photos"}}
+            }).catch(() => {
+                // 退回抓 HTML 页面
+                var pageUrl = self.base + "/" + id + "/"
+                return Network.get(pageUrl, self.pageHeaders()).then((r2) => {
+                    if (r2.status !== 200) throw "err"
+                    var title = ""
+                    var tm = r2.body.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i)
+                    if (tm) title = self.decodeEntities(tm[1])
+                    if (!title) {
+                        var h1 = r2.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/)
+                        if (h1) title = self.decodeEntities(h1[1])
+                    }
+                    if (!title) {
+                        var tg = r2.body.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+                        if (tg) title = self.decodeEntities(tg[1])
+                    }
+                    return {
+                        id: id,
+                        title: title || id,
+                        cover: self.extractCover(r2.body),
+                        tags: {},
+                        chapters: {"0": "View All Photos"}
+                    }
+                })
             })
         },
 
         loadEp: (id, e) => {
-            var url = "https://cosplaytele.com/" + id + "/"
             var self = this
+            var url = self.base + "/" + id + "/"
             return Network.get(url, self.pageHeaders()).then((r) => {
                 if (r.status !== 200) throw "err"
                 var allImgs = []
                 var seen = {}
-                // 用 HtmlDocument 解析，只从 .entry-content 区域提取图片
                 var d = new HtmlDocument(r.body)
-                var content = self.safeQuery(d, ".entry-content")
                 var html = ""
-                if (content) {
-                    html = content.innerHTML
-                } else {
+                try {
+                    var content = self.safeQuery(d, ".entry-content")
+                    html = content ? content.innerHTML : r.body
+                } catch (err) {
                     html = r.body
+                } finally {
+                    d.dispose()
                 }
-                d.dispose()
-                // 截断到 "Recommend For You" 之前，排除推荐图片
+                // 砍掉推荐位
                 var cutPos = html.indexOf("Recommend For You")
                 if (cutPos > 0) html = html.substring(0, cutPos)
-                // 提取所有图片 URL
-                // 方式1: 提取 <a data-fancybox href="..."> 中的 href
+
+                var push = (raw) => {
+                    if (!raw) return
+                    var s = self.abs(raw.replace(/\\\//g, "/"))
+                    if (!s) return
+                    if (!/\.(jpg|jpeg|png|webp)(\?|$)/i.test(s)) return
+                    if (seen[s]) return
+                    seen[s] = true
+                    allImgs.push(s)
+                }
+                // 方式1: data-fancybox 原图
                 var re1 = /<a[^>]+data-fancybox[^>]+href=["']([^"']+)["']/g
                 var m
-                while ((m = re1.exec(html)) !== null) {
-                    var s = m[1]
-                    if (s && !seen[s] && (s.indexOf(".jpg") > 0 || s.indexOf(".png") > 0 || s.indexOf(".webp") > 0 || s.indexOf(".jpeg") > 0)) {
-                        seen[s] = true
-                        allImgs.push(s)
-                    }
-                }
-                // 方式2: 提取所有 <img src="..."> 中的 src
+                while ((m = re1.exec(html)) !== null) push(m[1])
+                // 方式2: img src
                 if (allImgs.length === 0) {
-                    var re2 = /<img[^>]+src=["']([^"']+)["']/g
-                    while ((m = re2.exec(html)) !== null) {
-                        var s = m[1]
-                        if (s && !seen[s] && (s.indexOf(".jpg") > 0 || s.indexOf(".png") > 0 || s.indexOf(".webp") > 0 || s.indexOf(".jpeg") > 0)) {
-                            seen[s] = true
-                            allImgs.push(s)
-                        }
-                    }
+                    var re2 = /<img[^>]+(?:src|data-src|data-lazy-src)=["']([^"']+)["']/g
+                    while ((m = re2.exec(html)) !== null) push(m[1])
                 }
                 if (!allImgs.length) throw "no images"
                 return {images: allImgs}
             })
+        },
+
+        // 图片加载配置：headers 与页面请求保持一致；
+        // 若上游传来相对地址，这里改写成绝对地址 —— 下载流程同样走这个钩子，
+        // 这是防 "relative URL without a base" 的最后一道闸。
+        onImageLoad: (url, comicId, epId) => {
+            var cfg = {headers: this.pageHeaders()}
+            var fixed = this.abs(url)
+            if (fixed && fixed !== url) cfg.url = fixed
+            return cfg
+        },
+
+        onThumbnailLoad: (url) => {
+            var cfg = {headers: this.pageHeaders()}
+            var fixed = this.abs(url)
+            if (fixed && fixed !== url) cfg.url = fixed
+            return cfg
         }
     }
 
