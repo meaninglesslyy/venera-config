@@ -3,15 +3,17 @@
 class JJCos extends ComicSource {
     name = "JJCOS"
     key = "jjcos"
-    version = "1.1.0"
+    version = "1.2.1"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/jjcos.js"
 
     base = "https://jjcos.com"
 
+    // 封面兜底的最后一环：任何封面路径都不允许返回空串
+    SITE_ICON = "https://jjcos.com/favicon.ico"
+
     // 5 个分区：param -> {name, path}
-    // 5 个大厅分区：param -> {name, path}（explore 用）
-    SECTIONS = {
+    SECTION_LIST = {
         home:    { name: "Home",      path: "" },
         cosplay: { name: "Cosplay",   path: "tag/HSQ2151O0wZ" },
         japan:   { name: "Japan",     path: "tag/_m1OhebEGKK" },
@@ -28,10 +30,12 @@ class JJCos extends ComicSource {
         }
     }
 
-    // 图片加载头：模拟浏览器（Photon 有反盗链/边缘缓存，带 Referer 更接近网站观看效果）
+    // 图片加载头：带 webp/avif 的 Accept，Photon 会按协商转码，整包下载体积明显更小
     imageHeaders(slug) {
         let ref = this.base + "/"
-        if (slug) ref = this.detailUrl(slug)
+        if (slug) {
+            try { ref = this.detailUrl(slug) } catch (e) { ref = this.base + "/" }
+        }
         return {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
             "Accept": "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
@@ -39,17 +43,41 @@ class JJCos extends ComicSource {
         }
     }
 
+    // ============ URL 规整 ============
+    // 只补协议、做 trim，绝不"猜"相对路径去拼 base。
+    // 原因：app 会把本地漫画的封面（相对路径 "cover.webp" 或 "file:///data/..."）也送进来，
+    // 一旦被改写，下面 app 那段识别就失效了：
+    //   if (((configs['url'] ?? url)).startsWith('cover.')) { 回源取网络封面 }
+    // 拼接后变成 https://jjcos.com/cover.webp，前缀判断不过，app 就去请求这个 404，
+    // 表现为「下载好的漫画，详情页封面加载错误」（v1.2.0 踩过这个坑，1.2.1 修）。
+    tryAbs(u) {
+        let s = String(u == null ? "" : u).trim()
+        if (!s) return ""
+        if (/^https?:\/\//i.test(s)) return s
+        if (s.startsWith("//")) return "https:" + s
+        return s
+    }
+
+    // 封面用：能拿到绝对 http(s) 就用，否则兜底到站点图标（保证发给 app 的 cover 非空）
+    abs(u, fallback) {
+        let s = this.tryAbs(u)
+        if (/^https?:\/\//i.test(s)) return s
+        return fallback || this.SITE_ICON
+    }
+
     // 分区的列表 URL（page 从 1 开始）
-    // param 两种：① SECTIONS 里的 key（home/cosplay/japan/korea/r18）② 裸 tag id（自动拼 tag/{id}/）
+    // param 两种：① SECTION_LIST 里的 key（home/cosplay/japan/korea/r18）② 裸 tag id（自动拼 tag/{id}/）
     sectionUrl(param, page) {
         if (param === "home") {
             return this.base + (page > 1 ? "/page/" + page + "/" : "/")
         }
-        let path = this.SECTIONS[param] ? this.SECTIONS[param].path : "tag/" + param
+        let path = this.SECTION_LIST[param] ? this.SECTION_LIST[param].path : "tag/" + param
         return this.base + "/" + path + "/" + (page > 1 ? "page/" + page + "/" : "")
     }
 
-    // 详情 URL：slug 是完整标题（含 unicode/空格/逗号），需整体编码
+    // 详情 URL：slug 是完整标题（含 unicode/空格/逗号），需整体编码。
+    // 注意逗号：站点对未编码（或 encodeURI 那种保留逗号）的 URL 会返回 200 + 空 body，
+    // 必须 encodeURIComponent 把「,」编成 %2C，实测同一帖 0 图 → 32 图。
     detailUrl(slug) {
         return this.base + "/post/" + encodeURIComponent(slug) + "/"
     }
@@ -63,12 +91,52 @@ class JJCos extends ComicSource {
         return s
     }
 
-    normalizeUrl(u) {
-        if (!u) return ""
-        u = String(u).trim()
-        if (u.startsWith("//")) return "https:" + u
-        if (/^https?:\/\//i.test(u)) return u
-        return u
+    // ============ 请求层：给下载链路兜可靠性 ============
+    sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms))
+    }
+
+    // 站点限流闸：撞过 429 就记一个冷却点，同一批批量操作里的后续请求先等，别连环撞
+    cooldownUntil = 0
+
+    // 统一页面请求：
+    // - 429/503 长退避重试。实测站点是突发限流，冷却到几十秒级，
+    //   短退避（500ms/2s）根本骑不过去，会被 429 穿透
+    // - 200 但 body 为空也重试（站点对未编码逗号的空页就是这个形态，静默失败最坑）
+    // - 图片链路是独立的，实测零间隔连拉 60 张全 200，不受这个闸影响
+    async fetchPage(url, tries) {
+        let max = tries || 4
+        let lastErr = "unknown"
+        for (let i = 0; i <= max; i++) {
+            if (i > 0) {
+                // 0.9s / 2.5s / 7s / 20s
+                await this.sleep(Math.round(900 * Math.pow(2.8, i - 1)))
+            }
+            let w = this.cooldownUntil - Date.now()
+            if (w > 0) await this.sleep(Math.min(w, 20000))
+
+            let r = null
+            try {
+                r = await Network.get(url, this.pageHeaders())
+            } catch (e) {
+                lastErr = String(e)
+                continue
+            }
+            if (r.status === 200) {
+                let body = r.body || ""
+                if (body.length > 512) return body
+                lastErr = "empty body"
+                continue
+            }
+            lastErr = "http " + r.status
+            if (r.status === 429 || r.status === 503) {
+                this.cooldownUntil = Date.now() + 8000
+                continue
+            }
+            // 其余 4xx 重试没意义
+            if (r.status < 500) break
+        }
+        throw "fetch failed: " + url + " (" + lastErr + ")"
     }
 
     // 解析列表页（article -> {id, title, cover, date}）
@@ -84,7 +152,7 @@ class JJCos extends ComicSource {
             let slug = this.slugFromHref(href)
             if (!slug || slug.indexOf("post/") >= 0) continue
             let img = it.querySelector(".img-box img, figure img")
-            let cover = this.normalizeUrl(img ? (img.attributes["src"] || "") : "")
+            let cover = this.abs(img ? (img.attributes["src"] || "") : "")
             let titleEl = it.querySelector(".fh5co-article-title a, h3 a")
             let title = titleEl ? (titleEl.text || "").trim() : (img ? (img.attributes["alt"] || "").trim() : "")
             let dateEl = it.querySelector(".date-overlay")
@@ -116,9 +184,8 @@ class JJCos extends ComicSource {
         let ids = String(param).split("|").map((x) => x.trim()).filter((x) => x)
         if (ids.length <= 1) {
             let url = this.sectionUrl(ids[0] || param, page)
-            return Network.get(url, this.pageHeaders()).then((r) => {
-                if (r.status !== 200) throw "err"
-                return {comics: this.parseList(r.body), maxPage: this.maxPageFrom(r.body, page)}
+            return this.fetchPage(url).then((body) => {
+                return {comics: this.parseList(body), maxPage: this.maxPageFrom(body, page)}
             })
         }
         return this.fetchAggregate(ids, page)
@@ -127,12 +194,12 @@ class JJCos extends ComicSource {
     // 聚合 tag：每个 id 拉第 1 页取 max + 当前页取内容，合并去重
     fetchAggregate(ids, page) {
         let tasks = ids.map((id) => {
-            let p1 = Network.get(this.sectionUrl(id, 1), this.pageHeaders())
-            let pn = page === 1 ? p1 : Network.get(this.sectionUrl(id, page), this.pageHeaders())
-            return Promise.all([p1, pn]).then(([r1, rn]) => {
-                let max = r1.status === 200 ? this.maxPageFrom(r1.body, 1) : 1
-                let comics = rn.status === 200 ? this.parseList(rn.body) : []
-                return {max: max, comics: comics}
+            let p1 = this.fetchPage(this.sectionUrl(id, 1))
+            let pn = page === 1 ? p1 : this.fetchPage(this.sectionUrl(id, page))
+            return Promise.all([p1, pn]).then(([b1, bn]) => {
+                return {max: this.maxPageFrom(b1, 1), comics: this.parseList(bn)}
+            }).catch(() => {
+                return {max: 1, comics: []}
             })
         })
         return Promise.all(tasks).then((results) => {
@@ -151,7 +218,29 @@ class JJCos extends ComicSource {
         })
     }
 
-    // ============ 大厅：一页五块，每块首页 20 套 + 查看更多 ============
+    // ============ 正文图提取（详情封面兜底 + 整包下载共用一份） ============
+    // 只认 Photon 图床：源站稳时可转码，源站挂（实测 522）时还有边缘缓存
+    photonImages(body) {
+        let out = []
+        let seen = {}
+        let doc = new HtmlDocument(body)
+        let container = doc.querySelector("#post-content")
+        let els = container ? container.querySelectorAll("img") : []
+        for (let i = 0; i < els.length; i++) {
+            let el = els[i]
+            // 排除 prev/next 导航缩略图（class=post-image）
+            let cls = el.attributes["class"] || ""
+            if (cls.indexOf("post-image") >= 0) continue
+            let raw = el.attributes["src"] || el.attributes["data-src"] || el.attributes["data-original"] || ""
+            let src = this.tryAbs(raw)
+            if (!src || !/^https?:\/\/i\d+\.wp\.com\//.test(src)) continue
+            if (!seen[src]) { seen[src] = true; out.push(src) }
+        }
+        doc.dispose()
+        return out
+    }
+
+    // ============ 大厅：一页五块，每块首页 5 套 + 查看更多 ============
     explore = [
         {
             title: "JJCOS",
@@ -161,7 +250,7 @@ class JJCos extends ComicSource {
                 let params = ["home", "cosplay", "japan", "korea", "r18"]
                 for (let i = 0; i < params.length; i++) {
                     let param = params[i]
-                    let sec = this.SECTIONS[param]
+                    let sec = this.SECTION_LIST[param]
                     let viewMore = { page: "category", attributes: { category: sec.name, param: param } }
                     try {
                         let r = await this.fetchList(param, 1)
@@ -248,7 +337,7 @@ class JJCos extends ComicSource {
                         id: this.slugFromHref(p.link),
                         title: p.title,
                         subTitle: p.dateFormat || "",
-                        cover: this.normalizeUrl(p.feature),
+                        cover: this.abs(p.feature),
                     }))
                 }
                 return {comics: comics, maxPage: Math.max(1, Math.ceil(matched.length / perPage))}
@@ -265,54 +354,108 @@ class JJCos extends ComicSource {
     comic = {
         loadInfo: (id) => {
             let url = this.detailUrl(id)
-            return Network.get(url, this.pageHeaders()).then((r) => {
-                if (r.status !== 200) throw "err"
+            return this.fetchPage(url).then((body) => {
                 let title = ""
-                let tm = r.body.match(/<meta property="og:title" content="([^"]+)"/)
-                if (tm) title = tm[1].replace(/\s*[-|]\s*JJCOS\s*$/, "").trim()
+                let tm = body.match(/<meta property="og:title" content="([^"]*)"/)
+                if (tm) title = this.stripSite(tm[1])
+                if (!title) {
+                    let t = body.match(/<title>([^<]*)<\/title>/)
+                    if (t) title = this.stripSite(t[1])
+                }
                 if (!title) title = id
+
+                // 封面多级兜底。任一级都可能缺失：/post/about/ 这类页面就是完全没 og:image，
+                // 早期版本直接返回空串，app 一按下载就抛 relative URL without a base。
                 let cover = ""
-                let cm = r.body.match(/<meta property="og:image" content="([^"]+)"/)
-                if (cm) cover = cm[1]
+                let om = body.match(/<meta property="og:image" content="([^"]*)"/)
+                if (om && om[1].trim()) cover = om[1].trim()
+                if (!cover) {
+                    let tw = body.match(/<meta name="twitter:image" content="([^"]*)"/)
+                    if (tw && tw[1].trim()) cover = tw[1].trim()
+                }
+                if (!cover) {
+                    let tile = body.match(/<meta name="msapplication-TileImage" content="([^"]*)"/)
+                    if (tile && tile[1].trim()) cover = tile[1].trim()
+                }
+                if (!cover) {
+                    // 正文首图：og 缺失时的最后一道真图兜底
+                    let first = this.photonImages(body)
+                    if (first.length) cover = first[0]
+                }
+
                 return {
                     title: title,
-                    cover: cover,
+                    cover: this.abs(cover, this.SITE_ICON),
                     tags: {},
                     chapters: {"0": "View All Photos"},
                 }
             })
         },
 
+        // 整章图片列表 —— app 内置下载就是吃这里的 images
         loadEp: (id, epId) => {
             let url = this.detailUrl(id)
-            return Network.get(url, this.pageHeaders()).then((r) => {
-                if (r.status !== 200) throw "err"
-                let doc = new HtmlDocument(r.body)
-                let container = doc.querySelector("#post-content")
-                let imgs = []
-                let seen = {}
-                let els = container ? container.querySelectorAll("img") : []
-                for (let i = 0; i < els.length; i++) {
-                    let cls = els[i].attributes["class"] || ""
-                    // 排除 prev/next 导航缩略图（class=post-image）与无关图
-                    if (cls.indexOf("post-image") >= 0) continue
-                    let src = this.normalizeUrl(els[i].attributes["src"] || els[i].attributes["data-src"] || "")
-                    // 只看 Photon 图床图：i1.wp.com/{box}/wp-content/uploads/（老帖）或 i1.wp.com/{pages.dev}/file/（新帖）
-                    if (!src || !/^https?:\/\/i\d+\.wp\.com\//.test(src)) continue
-                    if (!seen[src]) { seen[src] = true; imgs.push(src) }
-                }
-                doc.dispose()
+            return this.fetchPage(url).then((body) => {
+                let imgs = this.photonImages(body)
                 if (!imgs.length) throw "no images"
                 return {images: imgs}
             })
         },
 
-        // 图片加载带浏览器头（Referer 对齐网站观看行为）
+        // 图片加载：只对真正的网络地址补规范 + 挂降级链。
+        // 本地封面（"cover.webp"）和本地文件（"file:///data/..."）必须原样透传，
+        // 不能覆盖 url —— 覆盖会打断 app 对本地封面的识别（详见 tryAbs 上的注释）。
         onImageLoad: (url, comicId, epId) => {
-            return { headers: this.imageHeaders(comicId) }
+            let u = this.tryAbs(url)
+            let cfg = { headers: this.imageHeaders(comicId) }
+            if (/^https?:\/\//i.test(u)) {
+                cfg.url = u
+                cfg.onLoadFailed = () => this.imageFallback(u, comicId)
+            }
+            return cfg
         },
         onThumbnailLoad: (url) => {
-            return { headers: this.imageHeaders() }
+            let u = this.tryAbs(url)
+            let cfg = { headers: this.imageHeaders() }
+            if (/^https?:\/\//i.test(u)) {
+                cfg.url = u
+                cfg.onLoadFailed = () => this.imageFallback(u)
+            }
+            return cfg
         },
+    }
+
+    // ============ 死域图床降级 ============
+    // 站点用一堆第三方 box 当图床，索引实测约三成帖子的 box 已经彻底死了：
+    // 源站 522，Photon 也返回 400（边缘缓存衰减干净了），换分片/加尺寸参数都救不回来。
+    // 唯一还有货的是 Wayback：实测一个 40 张的死域帖归档 40/40 全中，直取还是原图。
+    // 所以失败就降级：① 原样重试一次（排除偶发抖动）② 转 Wayback 原始文件 ③ 收手。
+    imgState = {}
+
+    imageFallback(u, comicId) {
+        if (!u) return null
+        let st = this.imgState[u] || 0
+        if (st >= 2) return null                       // 原图和归档都试过了，别再递归
+        this.imgState[u] = st + 1
+        let n = 0
+        for (let k in this.imgState) n++               // 防无限增长
+        if (n > 1000) this.imgState = {}
+        // 注意：每一层返回的 config 都必须继续带上 onLoadFailed，否则降级链在第一跳就断了
+        let again = () => this.imageFallback(u, comicId)
+        if (st === 0) {
+            return { url: u, headers: this.imageHeaders(comicId), onLoadFailed: again }
+        }
+        let m = u.match(/^https?:\/\/i\d+\.wp\.com\/([^/]+)\/(.+)$/)
+        if (!m) return null
+        return {
+            url: "https://web.archive.org/web/2025id_/https://" + m[1] + "/" + m[2],
+            headers: this.imageHeaders(comicId),
+            onLoadFailed: again,
+        }
+    }
+
+    // og:title / <title> 去掉站名后缀
+    stripSite(s) {
+        return String(s || "").replace(/\s*[-|—]\s*JJCOS\s*$/i, "").trim()
     }
 }
