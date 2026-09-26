@@ -35,6 +35,13 @@
         "description": "真人图包"
     },
     {
+        "name": "FoamGirl",
+        "fileName": "real_person_photo_book/foamgirl.js",
+        "key": "foamgirl",
+        "version": "1.2.1",
+        "description": "真人图包"
+    },
+    {
         "name": "51漫画",
         "fileName": "normal_comic/51manga.js",
         "key": "manga51",
