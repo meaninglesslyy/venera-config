@@ -1,17 +1,5 @@
 /** @type {import('../../venera-configs/_venera_.js')} */
 
-/**
- * JJCOS —— https://jjcos.com
- *
- * 结构：
- * - 5 个分区：Home(/)、Cosplay、Japan、Korea、R18（都是 tag 页）
- * - 列表：<article class="custom-article"> → figure.img-box a + img + h3
- * - 分页：<input type="number" max="N">；home=/page/N/，tag=/tag/{id}/page/N/
- * - 详情：/post/{slug}/，正文图在 #post-content img（排除 .post-navigation 的 prev/next 缩略图）
- * - 图片：i1.wp.com/{box}/wp-content/uploads/... 老帖 + i1.wp.com/{pages.dev}/file/{hash}.jpg 新帖
- *   （都是 Jetpack Photon 包裹，直接用）
- *
- */
 class JJCos extends ComicSource {
     name = "JJCOS"
     key = "jjcos"
