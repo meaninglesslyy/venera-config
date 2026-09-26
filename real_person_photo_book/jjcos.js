@@ -3,7 +3,7 @@
 class JJCos extends ComicSource {
     name = "JJCOS"
     key = "jjcos"
-    version = "1.2.1"
+    version = "1.3.0"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/jjcos.js"
 
@@ -265,14 +265,24 @@ class JJCos extends ComicSource {
     ]
 
     // ============ 分类：查看更多进入后的完整分区 ============
+    // categoryParams 里的一个字符串 = 一个聚合 tag，多个 tag id 用 | 拼起来
+    // （同名 tag 站上常拆成好几个：如「咬一口兔娘」+「咬一口兔娘ovo」、「JK」+「JK制服」）
     category = {
         title: "JJCOS",
         parts: [
             {
-                name: "分区",
+                name: "模特",
                 type: "fixed",
                 itemType: "category",
-                categories: ["秀人网", "JVID", "阿薰kaOri", "蠢沫沫", "水淼Aqua", "Natsuko夏夏子", "铃木美咲", "星之迟迟", "雪晴Astra", "小和甜酒", "Tiny Asa", "Bangni邦尼", "Yeha"],
+                categories: [
+                    "秀人网", "JVID", "阿薰kaOri", "蠢沫沫", "水淼Aqua", "Natsuko夏夏子",
+                    "铃木美咲", "星之迟迟", "雪晴Astra", "小和甜酒", "Tiny Asa", "Bangni邦尼", "Yeha",
+                    "落落Raku", "Byoru", "Yuuhui 玉汇", "洛璃 LoLiSAMA", "瓜希酱", "Umeko.J", "柒柒要乖哦",
+                    "咬一口兔娘", "桃良阿宅", "Quan冉有点饿", "桜桃喵", "尤蜜荟", "面饼仙儿", "轩萧学姐",
+                    "过期米线线喵", "发条少女", "布丁大法", "阿包也是兔娘", "七月喵子", "南桃Momoko",
+                    "Rioko凉凉子", "小丁", "抱走莫子AA", "九曲Jean", "爆机少女喵小吉", "九言",
+                    "蜜汁猫裘", "樱井宁宁", "黏黏团子兔", "白莉爱吃巧克力",
+                ],
                 categoryParams: [
                     "lF2wifO7tb5n|XUU4iaNxd1hp|8OSxrA28xshu",
                     "J98wrYlyozVo|eIFhPjl4ARrD",
@@ -287,8 +297,54 @@ class JJCos extends ComicSource {
                     "KGvOqn5hMDC_",
                     "Nf6X0WFs2T-m",
                     "WKyr1DA4uNMH|0rE928kTUjwr",
+                    "VTXOyMlw7Lw",
+                    "blCtpfRG-20|L60ILwQl8za",
+                    "DjJutJcQRYTF|tKnvxR5KnUhn",
+                    "edBVsXnb-8m6",
+                    "Kp5OqAT-Mt8j",
+                    "HJV_eJqq1UIm",
+                    "1l185BXznBZ",
+                    "eJ-tNWxvF1FU|As8pDfvw16uI",
+                    "2t9kQr4GXB_2X",
+                    "kGF7TIODADC",
+                    "SnTwX7-GaTwqF",
+                    "qFb1Vic_lPij",
+                    "dEKXtoz_9Sww_",
+                    "rntImFtgPlp3|QBCsTl8owlDQI",
+                    "vwFAVi3asOZYO",
+                    "b9bOlCJ0mMw",
+                    "ngHUtu8jg4J|V5bqRb69qTm|iV3Z1El3FrZqG",
+                    "v-dPKbv1EucV|-i4LLWW9o1Cs",
+                    "uViMxqfbK_ur",
+                    "8iaqcoL_sYxJ-",
+                    "d8IkF_nIJJq4|qw-BHkxsmpL",
+                    "Sqxx4y0H7IjJ",
+                    "l-CNc8mIE-0SA|W-beJKwS-hnex",
+                    "9xtkJx3ppTPDh",
+                    "LLWa4ItS0ZJm|Dp1QTEl4pIF3",
+                    "vIgNockWX2s",
+                    "_dyvlARzZ2N4x",
+                    "IMF3eerLrs_",
+                    "CZOIS2DyO9dk",
+                    "tkq0q2BmTKLV|-3vwR2d-A_Fl",
                 ],
-            }
+            },
+            {
+                name: "主题",
+                type: "fixed",
+                itemType: "category",
+                categories: ["黑丝", "白丝", "丝袜", "修女", "女仆", "JK", "旗袍", "百合"],
+                categoryParams: [
+                    "984aqscB8ob",
+                    "2bfYItTMKNUp",
+                    "Wk5IDV9lJnj7",
+                    "hTz-kbe926SC",
+                    "bDEuw2-tBi9U",
+                    "bItARZsf0KAG|8gtCw4iC40HTA",
+                    "Y_fFW3_4vSQb",
+                    "6hH5nUbEEh53",
+                ],
+            },
         ],
         enableRankingPage: false,
     }
