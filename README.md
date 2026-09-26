@@ -33,7 +33,6 @@ https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 ## [真人图包](https://github.com/meaninglesslyy/venera-config/tree/main/real_person_photo_book)
 - [4khd](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/4khd.js)
 - [cosplaytele](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/cosplaytele.js)
-- [HentaiCosplay](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/HentaiCosplay.js)
 - [JJCOS](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/jjcos.js)
 - [FoamGirl](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/foamgirl.js)
 
