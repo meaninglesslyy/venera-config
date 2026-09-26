@@ -13,13 +13,6 @@
         "version": "2.0.2",
         "description": "真人图包"
     },
-        {
-        "name": "Hentai Cosplay",
-        "fileName": "real_person_photo_book/HentaiCosplay.js",
-        "key": "hentaicosplay",
-        "version": "2.0.0",
-        "description": "真人图包"
-    },
     {
         "name": "CosplayTele",
         "fileName": "real_person_photo_book/cosplaytele.js",
