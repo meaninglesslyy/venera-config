@@ -3,7 +3,7 @@
 class BuonDua extends ComicSource {
     name = "Buon Dua"
     key = "buondua"
-    version = "1.1.0"
+    version = "1.2.0"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/buondua.js"
 
@@ -295,7 +295,27 @@ class BuonDua extends ComicSource {
             d.dispose()
         }
 
-        if (tagNames.length) tags["tag"] = tagNames
+        // 网盘链接 → 可点标签芯片，排在普通标签前面。
+        // key = 网盘名（详情页里 key 芯片不可点，当标题用），value = URL（可点，
+        // 点一下走 comic.onClickTag → UI.launchUrl 直接进浏览器）。
+        // 为什么非得这么绕：Venera 的简介是 SelectableText、**不渲染 markdown**，
+        // 也没有别的可点字段，想把 URL 做成能点的只有「当 tag value」这一条路。
+        let linkTags = {}
+        for (let i = 0; i < links.length; i++) {
+            let name = this.cleanLabel(
+                links[i].label.replace(/^\s*download\s*link\s*[:\-]\s*/i, "")
+            ) || "下载"
+            let key = name
+            let n = 1
+            while (linkTags[key]) { n++; key = name + " " + n }
+            linkTags[key] = [links[i].url]
+        }
+
+        let allTags = {}
+        for (let k in linkTags) allTags[k] = linkTags[k]
+        if (tagNames.length) allTags["tag"] = tagNames
+        tags = allTags
+
         if (!cover) {
             let imgs = this.articleImages(html)
             if (imgs.length) cover = imgs[0]
@@ -574,6 +594,23 @@ class BuonDua extends ComicSource {
 
         onThumbnailLoad: (url) => {
             return { headers: this.headers() }
+        },
+
+        /**
+         * 标签芯片点击回调（app 的 ComicSource.handleClickTagEvent 钩子，
+         * JS 侧名字就叫 comic.onClickTag，parser.dart:_parseClickTagEvent 会检测它是否存在）。
+         * 详情页把网盘链接塞成了「网盘名 → [URL]」的标签对，所以凡是值本身是 URL 的，
+         * 直接 UI.launchUrl 拉浏览器 —— 一下点进网盘，不用先复制再粘贴。
+         * 普通标签返回 null，不干扰 app 默认行为。
+         */
+        onClickTag: (namespace, tag) => {
+            try {
+                let s = String(tag || "").trim()
+                if (/^https?:\/\//i.test(s)) UI.launchUrl(s)
+            } catch (e) {
+                // 拿不到 UI（老版本 app）就静默跳过，别把详情页搞崩
+            }
+            return null
         },
 
         idMatch: "buondua\\.com/([^/?#]+)",
