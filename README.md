@@ -37,6 +37,7 @@ https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 - [buondua](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/buondua.js)
 - [Misskon](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/misskon.js)
 - [V2PH](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/v2ph.js)
+- [Xiutaku](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/xiutaku.js)
 
 ## [生肉](https://github.com/meaninglesslyy/venera-config/tree/main/raw_comic)
 - [mangaforfree](https://github.com/meaninglesslyy/venera-config/blob/main/raw_comic/mangaforfree.js)
