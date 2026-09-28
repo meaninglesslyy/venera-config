@@ -56,6 +56,13 @@
         "description": "不登陆限制观看10张，默认账号每天限量观看10套，切换账号即可刷新额度/去原站充钱购买不限额资格(不推荐)"
     },
     {
+        "name": "Xiutaku",
+        "fileName": "real_person_photo_book/xiutaku.js",
+        "key": "xiutaku",
+        "version": "1.1.0",
+        "description": "分类页里的“人气模特”分区下首个tag“随机抽取”可从原站1800多个tag内随机抽取"
+    },
+    {
         "name": "51漫画",
         "fileName": "normal_comic/51manga.js",
         "key": "manga51",
