@@ -46,14 +46,14 @@
         "fileName": "real_person_photo_book/misskon.js",
         "key": "misskon",
         "version": "1.1.0",
-        "description": "原站内均为预览，全部套图仅放出一部分，完全版点击tag的网盘链接即可下载"
+        "description": "原站内均为预览，所有套图仅放出一部分，完全版套图点击tag的网盘链接即可下载，解压密码在详情页描述里"
     },
     {
         "name": "V2PH",
         "fileName": "real_person_photo_book/v2ph.js",
         "key": "v2ph",
         "version": "1.2.0",
-        "description": "不登陆限制观看，默认账号每天限量观看10套，切换账号即可刷新额度"
+        "description": "不登陆限制观看10张，默认账号每天限量观看10套，切换账号即可刷新额度"
     },
     {
         "name": "51漫画",
