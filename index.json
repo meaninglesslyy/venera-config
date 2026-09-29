@@ -39,14 +39,14 @@
         "fileName": "real_person_photo_book/buondua.js",
         "key": "buondua",
         "version": "1.2.0",
-        "description": "点击详情页tag的网盘链接即可下载套图，解压密码在详情页描述里"
+        "description": "点击tag的网盘链接即可下载完整版套图，解压密码在详情页描述里"
     },
     {
         "name": "MissKon",
         "fileName": "real_person_photo_book/misskon.js",
         "key": "misskon",
         "version": "1.1.0",
-        "description": "原站内均为预览，所有套图仅放出一部分，完全版套图点击tag的网盘链接即可下载，解压密码在详情页描述里"
+        "description": "原站内均为预览，所有套图仅放出一部分，点击tag的网盘链接即可下载完整版套图，解压密码在详情页描述里"
     },
     {
         "name": "V2PH",
@@ -74,7 +74,7 @@
         "fileName": "real_person_photo_book/mitaku.js",
         "key": "mitaku",
         "version": "1.0.0",
-        "description": "完全版套图点击tag的网盘链接即可下载，解压密码在详情页描述里"
+        "description": "点击tag的网盘链接即可下载完整版套图，解压密码在详情页描述里"
     },
     {
         "name": "51漫画",
