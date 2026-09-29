@@ -63,6 +63,13 @@
         "description": "秀人网专区，分类页里的“人气模特”分区下首个tag“随机抽取”可从原站1800多个tag内随机抽取"
     },
     {
+        "name": "Kiutaku",
+        "fileName": "real_person_photo_book/kiutaku.js",
+        "key": "kiutaku",
+        "version": "1.1.0",
+        "description": "真人图包"
+    },
+    {
         "name": "51漫画",
         "fileName": "normal_comic/51manga.js",
         "key": "manga51",
