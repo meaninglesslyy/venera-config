@@ -70,6 +70,13 @@
         "description": "真人图包"
     },
     {
+        "name": "Mitaku",
+        "fileName": "real_person_photo_book/mitaku.js",
+        "key": "mitaku",
+        "version": "1.0.0",
+        "description": "完全版套图点击tag的网盘链接即可下载，解压密码在详情页描述里"
+    },
+    {
         "name": "51漫画",
         "fileName": "normal_comic/51manga.js",
         "key": "manga51",
