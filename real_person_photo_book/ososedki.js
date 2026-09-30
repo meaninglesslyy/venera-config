@@ -1,55 +1,6 @@
 /** @type {import('./_venera_.js')} */
 
-// ============================================================================
-//  OSOSEDKI.com  —  Venera 漫画源
-//
-//  站点：PHP + Bootstrap SSR，Cloudflare 前置（不挡 curl/app）。
-//  数据来源：
-//    - 列表页 HTML : /  /top  /category/{slug}  /cosplay/{tag}  /model/{x}  /fandom/{x}  /search?q=
-//    - 卡片接口    : /api/albums?page=N            （首页，返回 {html, hasMore}）
-//                    /api/albums?page=N&type=top&value=1 （Top 榜）
-//    - 详情页      : 一次给全部图片，无分页；顺带带一段 schema.org JSON-LD
-//                    （name / description / thumbnailUrl / numberOfItems /
-//                      datePublished / userInteractionCount，image 只给前 10 张）
-//
-//  坑位记录：
-//    1. 列表每页 24 条；卡片是 article.gallery-item，广告位是 div.gallery-item.banner-item
-//       （同 class 不同标签），用 article 限定即天然排除。
-//    2. 详情页每 4 张图插一个广告块 <div class="gallery-item banner-item">，
-//       图片必须用 figure.photo-item 限定，否则广告块会混进去。
-//    3. 正文图片在 DOM 里是按文件名「字符串」排序的（1, 10, 11, …, 2, 20 …），
-//       站点自己的阅读器顺序就是错的。文件名是纯整数，这里统一按数值重排。
-//    4. maxPage：
-//       - /category /cosplay /model /fandom /search 页头有 "N albums" / "(N results)"，
-//         用 ceil(N/24)（与站内分页器末页号一致，已实测）。
-//       - 首页和 /top 没有可信计数（首页导航写 2555，实测只到 2264；/top 干脆没有
-//         分页器，实测 2555 页）。这两个走 /api/albums 二分探测，结果会话内缓存。
-//    5. 站点的 Cloudflare 风控是两级的：先是限流 403，再升级成
-//       "Just a moment..." 托管挑战（整个域，含 /api/albums）。实测连续 ~90 个
-//       页面请求就会被推进挑战名单，冷却按小时计。所有非图片请求走全局闸门串行
-//       + 403/5xx 指数退避，闸门间隔 600ms 起，别调小。
-//    6. 图床 https://ososedki.com/images/... 无防盗链（带不带 Referer 都 200），
-//       所以 onImageLoad 不需要加 Referer/headers —— 它的作用是**失败降级链**：
-//       app 在 `_loadComicImage` 里 `if (retryLimit < 0 || onLoadFailed == null) rethrow;`
-//       ——源不挂 onLoadFailed 的话，任何一次瞬时失败当场抛错，整章下载里那张图
-//       永远标不齐。挂上后 app 会一路重试（retryLimit=5）。
-//       每一跳都必须继续带 onLoadFailed（app 每轮循环重新读 configs['onLoadFailed']），
-//       否则降级链第一跳就断。
-//    7. 同一张图有 1280 原图 / 604 缩略两套目录，降级时走 604 是有依据的（站点详情页
-//       data-src 用的就是它）。但**降级链对本地地址必须原样透传**：已下载的图包会把
-//       `cover.webp` 相对路径或 file:// / content:// 喂进来，一拼站名 app 的本地路径
-//       判定就失效，症状是「下载好的漫画进详情页封面报错，但离线图包还能看」。
-//
-//  图片地址：
-//    封面   /images/albums/{artistId}/{albumId}.webp
-//           ⚠️ 只认 .webp！详情页 og:image / twitter:image / JSON-LD thumbnailUrl 给的是
-//           同路径 .jpg，但**站点从不加载它**（全站快照：<img src> 432 处全是 .webp，
-//           meta 里 4 处 .jpg）—— 实测 404，会让整包下载失败。
-//    原图   /images/a/1280/{artistId}/{albumId}/{n}.webp
-//    缩略图 /images/a/604/{artistId}/{albumId}/{n}.webp
-//
-//  详情 id 形如 `-10000001_10016268`，即 URL 里的 /photos/{id}。
-// ============================================================================
+============================================================
 
 const OS_BASE = "https://ososedki.com";
 
