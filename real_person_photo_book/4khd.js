@@ -3,19 +3,21 @@
 class FourKHDv2 extends ComicSource {
     name = "4KHD"
     key = "fourkhd"
-    version = "2.0.2"
+    version = "2.0.6"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/4khd.js"
 
-    // 入口（会 302 到当前 uuss.uk 入口域）
+    // 入口（会 302 到当前 uuss.uk 网关，网关页里有当前主机列表）
     entryUrl = "https://4khd.com/"
 
-    // 发现失败时的回落值（手动维护）
-    apiBase = "https://hecoq.uuss.uk"
-    contentBase = "https://kcqt.uuss.uk"
+    // 发现失败时的回落值（2026-09-30 实测真站）
+    apiBase = "https://qhrzv.uuss.uk"
 
     // 本次会话是否已做过域名发现
     _resolved = false
+
+    // 每页条数：和原站首页一致（12 条/页 → 3257 页），别改成 20，不然页数对不上
+    perPage = 12
 
     pageHeaders(base) {
         var b = base || this.apiBase
@@ -27,12 +29,14 @@ class FourKHDv2 extends ComicSource {
         }
     }
 
-    htmlHeaders(base) {
+    htmlHeaders(ref) {
+        var r = ref || this.entryUrl
+        var m = String(r).match(/^https?:\/\/[^/]+/)
         return {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-US,en;q=0.9,zh-CN;q=0.8",
-            "Referer": (base || this.contentBase) + "/",
+            "Referer": (m ? m[0] : r) + "/",
         }
     }
 
@@ -81,20 +85,26 @@ class FourKHDv2 extends ComicSource {
             || /(?:^|\/)(?:logo|favicon|avatar)[^\/]*\.(?:png|jpe?g|webp|gif|avif)(?:$|\?)/i.test(u)
     }
 
-    // 容错 JSON 解析：站点有时会在 JSON 前吐 PHP Warning，先定位首个 [ 或 {
+    // 容错 JSON 解析：
+    // - 站点老毛病：JSON 前有一段 PHP Warning（<br /><b>Warning...</b><br />）→ 剥掉。
+    // - 站点新毛病：API 域报废时直接回 HTML 页面（CF 挑战/网关）→ 别去 HTML 里找 {，
+    //   否则 JSON.parse 会报 SyntaxError at position N。直接抛 "no json"。
     parseJson(raw) {
         if (!raw) throw "empty body"
         var s = String(raw)
+        var t = s.replace(/^\s+/, "")
+        if (t[0] === "[" || t[0] === "{") return JSON.parse(t)
         var i = -1
         for (var n = 0; n < s.length; n++) {
             var c = s[n]
             if (c === "[" || c === "{") { i = n; break }
         }
-        if (i < 0) throw "no json"
-        return JSON.parse(s.slice(i))
+        if (i <= 0) throw "no json"
+        if (s.slice(0, i).indexOf("Warning") >= 0) return JSON.parse(s.slice(i))
+        throw "no json"
     }
 
-    // 从 WP API 响应读 X-WP-TotalPages 分页头
+    // 从 WP API 响应读 X-WP-TotalPages 分页头（真站会带，读不到就回落当前页）
     getTotalPages(r, fallback) {
         if (r.headers) {
             var v = r.headers["x-wp-totalpages"] || r.headers["X-WP-TotalPages"]
@@ -111,28 +121,36 @@ class FourKHDv2 extends ComicSource {
     }
 
     // ============ 域名发现 ============
-    // 站点用随机 uuss.uk 子域轮换，且 API 域 ≠ 内容页域。
-    // 入口首页 HTML 里同时含有这两个域，抓出来即可。
+    // 入口 4khd.com 302 → 网关页（y5gx.uuss.uk/4khd.php），网关页里有个 sites 数组：
+    //   const sites = ['https://qhrzv.uuss.uk', 'https://jrimj.ssuu.uk'];
+    // 逐个探测哪个是真 API：要求返回 JSON **且第一条 content 里有 <img>**。
+    // 空壳镜像（doudou.me/hecoq 这类）content 全是 `<p>{slug}</p>`，探测直接淘汰。
     resolveBases() {
         var self = this
         if (this._resolved) return Promise.resolve()
-        return Network.get(this.entryUrl, this.htmlHeaders(this.entryUrl)).then((r) => {
-            var html = (r && r.body) ? r.body : ""
-            // 首页里出现的所有 uuss.uk 主机名（去重）
-            var hosts = []
-            var re = /https?:\/\/([a-z0-9-]+)\.uuss\.uk/gi
-            var m
-            while ((m = re.exec(html)) !== null) {
-                if (hosts.indexOf(m[1]) < 0) hosts.push(m[1])
-            }
-            // 内容页域：文章链接指向的那个
-            var cm = html.match(/https?:\/\/([a-z0-9-]+)\.uuss\.uk\/content\//i)
-            if (cm) self.contentBase = "https://" + cm[1] + ".uuss.uk"
-            // API 域：候选里第一个 REST API 能出 JSON 的
+        var entries = ["https://4khd.com/", "https://www.4khd.com/", "https://y5gx.uuss.uk/4khd.php"]
+        var hosts = []
+        var idx = 0
+        function collect() {
+            if (idx >= entries.length) return Promise.resolve()
+            var url = entries[idx]
+            idx++
+            return Network.get(url, self.pageHeaders(url)).then((r) => {
+                if (r.status === 200 && r.body) {
+                    var re = /['"]https?:\/\/([a-z0-9-]+\.(?:uuss|ssuu)\.uk)['"]/gi
+                    var m
+                    while ((m = re.exec(r.body)) !== null) {
+                        if (hosts.indexOf(m[1]) < 0) hosts.push(m[1])
+                    }
+                }
+                return collect()
+            }).catch(() => collect())
+        }
+        return collect().then(() => {
             var i = 0
             function tryNext() {
                 if (i >= hosts.length) return Promise.resolve()
-                var base = "https://" + hosts[i] + ".uuss.uk"
+                var base = "https://" + hosts[i]
                 i++
                 return self.probeApi(base).then((ok) => {
                     if (ok) { self.apiBase = base; return }
@@ -143,19 +161,20 @@ class FourKHDv2 extends ComicSource {
         }).then(() => {
             self._resolved = true
         }).catch(() => {
-            // 发现失败就用回落常量，别让整个源挂掉
             self._resolved = true
         })
     }
 
-    // 探测某个 base 是不是 WP REST API
+    // 探测某个 base 是不是「真」API（JSON + content 里有 <img>）
     probeApi(base) {
-        var url = base + "/index.php?rest_route=/wp/v2/posts&per_page=1"
+        var url = base + "/index.php?rest_route=/wp/v2/posts&page=1&per_page=1&_embed=1&orderby=date"
         return Network.get(url, this.pageHeaders(base)).then((r) => {
             if (r.status !== 200) return false
             try {
                 var d = this.parseJson(r.body)
-                return Array.isArray(d) && d.length > 0
+                if (!Array.isArray(d) || !d.length) return false
+                var html = (d[0].content || {}).rendered || ""
+                return html.indexOf("<img") >= 0
             } catch (e) {
                 return false
             }
@@ -184,7 +203,7 @@ class FourKHDv2 extends ComicSource {
     }
 
     // 从 WP 帖子提取封面。
-    // 注意：新格式的 wp:featuredmedia 是「自引用占位」（指向帖子自己，没有 source_url），
+    // 注意：空壳镜像的 wp:featuredmedia 是「自引用占位」（指向帖子自己，没有 source_url），
     // 必须校验 source_url 存在，否则会返回空串 → app 报 relative URL without a base。
     extractCover(post) {
         var c = post.jetpack_featured_media_url
@@ -235,7 +254,7 @@ class FourKHDv2 extends ComicSource {
         return this.resolveBases().then(() => {
             var params = [
                 ["page", String(page)],
-                ["per_page", "20"],
+                ["per_page", String(this.perPage)],
                 ["_embed", "1"],
             ]
             if (opts.orderby) params.push(["orderby", opts.orderby])
@@ -289,6 +308,7 @@ class FourKHDv2 extends ComicSource {
                 if (!raw || !String(raw).trim()) continue
                 var full = this.cleanImageUrl(raw)
                 if (!full || !this.isImageUrl(full)) continue
+                if (this.isSiteAsset(full)) continue
                 var key = full.replace(/\?.*$/, "")
                 if (!seen[key]) {
                     seen[key] = true
@@ -305,6 +325,7 @@ class FourKHDv2 extends ComicSource {
                 if (!href) continue
                 var f2 = this.cleanImageUrl(href)
                 if (!f2 || !this.isImageUrl(f2)) continue
+                if (this.isSiteAsset(f2)) continue
                 var key2 = f2.replace(/\?.*$/, "")
                 if (!seen[key2]) {
                     seen[key2] = true
@@ -316,31 +337,23 @@ class FourKHDv2 extends ComicSource {
         return out
     }
 
-    // 抓内容页 HTML（图片真正所在的地方）
-    fetchContentPage(slug) {
-        var self = this
-        if (!slug) return Promise.resolve("")
-        var url = self.contentBase + "/content/" + slug + ".html"
-        return Network.get(url, self.htmlHeaders()).then((r) => {
-            if (r.status !== 200 || !r.body) return ""
-            return r.body
-        }).catch(() => "")
-    }
-
     // ============ 大厅 ============
     explore = [
         {
             title: "4KHD-最新发布",
             type: "multiPageComicList",
             load: (p) => {
+                // 原站首页第 N 页 == REST page=N（per_page=12，顺序逐条一致，实测 N=1..8 与末页 3257）。
+                // 不要再走 `?query-3-page=N-1`：那是站方不生成的退化键，第 1、2 页会拿到杂烩。
                 return this.fetchList(p, {orderby: "date"})
             },
         },
         {
-            title: "4KHD-最近更新",
+            title: "4KHD-热门人气",
             type: "multiPageComicList",
             load: (p) => {
-                return this.fetchList(p, {orderby: "modified"})
+                // WP 分类 21 = popular（4869 帖），和最新发布完全不同的列表
+                return this.fetchList(p, {orderby: "date", categories: "21"})
             },
         },
     ]
@@ -396,15 +409,16 @@ class FourKHDv2 extends ComicSource {
 
         loadEp: (id, epId) => {
             var self = this
-            // 先拿帖子，取 slug（内容页按 slug 拼路径）
             return this.fetchPost(id).then((post) => {
-                var slug = post.slug || ""
-                return self.fetchContentPage(slug).then((html) => {
-                    var imgs = self.extractImages(html)
-                    if (imgs.length) return {images: imgs}
-                    // 兜底：内容页没抓到就退回 API 的 content.rendered（老格式帖子还有图）
-                    var apiImgs = self.extractImages((post.content || {}).rendered || "")
-                    if (apiImgs.length) return {images: apiImgs}
+                // 优先 API content（真站 content 是全量图，132 张一次给全）
+                var imgs = self.extractImages((post.content || {}).rendered || "")
+                if (imgs.length) return {images: imgs}
+                // 兜底：API 正文空（镜像/空壳）时，抓 post.link 内容页
+                var link = post.link || ""
+                if (!link) throw "no images"
+                return Network.get(link, self.htmlHeaders(link)).then((r) => {
+                    var pageImgs = (r.status === 200 && r.body) ? self.extractImages(r.body) : []
+                    if (pageImgs.length) return {images: pageImgs}
                     throw "no images"
                 })
             })
