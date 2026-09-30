@@ -77,6 +77,13 @@
         "description": "点击tag的网盘链接即可下载完整版套图，解压密码在详情页描述里"
     },
     {
+        "name": "Ososedki",
+        "fileName": "real_person_photo_book/ososedki.js",
+        "key": "ososedki",
+        "version": "1.1.1",
+        "description": "cf验证完成之后,要在wbeview界面点击返回首页验证才能生效，否则会循环验证"
+    },
+    {
         "name": "51漫画",
         "fileName": "normal_comic/51manga.js",
         "key": "manga51",
