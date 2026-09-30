@@ -340,12 +340,12 @@ class Kiutaku extends ComicSource {
 
     explore = [
         {
-            title: "最新",
+            title: "Kiutaku-最新",
             type: "multiPageComicList",
             load: (page) => this.fetchList("/", page),
         },
         {
-            title: "热门",
+            title: "Kiutaku-热门",
             type: "multiPageComicList",
             load: (page) => this.fetchList("/hot", page),
         },
