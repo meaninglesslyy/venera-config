@@ -3,7 +3,7 @@
 class Manga18fx extends ComicSource {
     name = "Manga18FX"
     key = "manga18fx"
-    version = "1.0.0"
+    version = "1.0.1"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/manga18fx.js"
 
@@ -143,8 +143,12 @@ class Manga18fx extends ComicSource {
         if (!e) return this.base + "/manga/" + comicId
         if (/^https?:\/\//i.test(e)) return e
         if (e.charAt(0) === "/") return this.base + e
-        // 裸章节号（"319" / "316.5"）也要能拼
-        if (/^\d+([.-]\d+)?$/.test(e)) return this.base + "/manga/" + comicId + "/chapter-" + e
+        // 裸章节号（"319" / "316.5"）也要能拼。
+        // ⚠️ 小数章在站点 URL 里是 `chapter-316-5`（点写成连字符），
+        // 拼成 `chapter-316.5` 会 404（实测确认）。
+        if (/^\d+([.-]\d+)?$/.test(e)) {
+            return this.base + "/manga/" + comicId + "/chapter-" + e.replace(/\./g, "-")
+        }
         return this.base + "/manga/" + comicId + "/" + e
     }
 
