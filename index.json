@@ -7,6 +7,13 @@
         "description": "生肉漫画"
     },
     {
+        "name": "Manga18FX",
+        "fileName": "raw_comic/manga18fx.js",
+        "key": "manga18fx",
+        "version": "1.0.0",
+        "description": "生肉漫画"
+    },
+    {
         "name": "4KHD",
         "fileName": "real_person_photo_book/4khd.js",
         "key": "fourkhd",
