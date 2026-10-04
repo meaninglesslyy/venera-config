@@ -44,6 +44,7 @@ https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 
 ## [生肉](https://github.com/meaninglesslyy/venera-config/tree/main/raw_comic)
 - [mangaforfree](https://github.com/meaninglesslyy/venera-config/blob/main/raw_comic/mangaforfree.js)
+- [manga18fx](https://github.com/meaninglesslyy/venera-config/blob/main/raw_comic/manga18fx.js)
   
 ## [正经漫画](https://github.com/meaninglesslyy/venera-config/tree/main/normal_comic)
 - [zero搬运网](https://github.com/meaninglesslyy/venera-config/blob/main/normal_comic/zerobyw33.js)
