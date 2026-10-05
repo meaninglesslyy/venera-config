@@ -98,6 +98,13 @@
         "description": "cf验证完成之后,要在wbeview界面点击返回首页验证才能生效，否则会循环验证"
     },
     {
+        "name": "绅士会所",
+        "fileName": "real_person_photo_book/hentaiclub.js",
+        "key": "hentaiclub",
+        "version": "1.0.0",
+        "description": "真人图包"
+    },
+    {
         "name": "51漫画",
         "fileName": "normal_comic/51manga.js",
         "key": "manga51",
