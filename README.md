@@ -9,7 +9,7 @@
 https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/index.json
 ```
 如果您不想影响原版仓库源的更新，推荐以下方法:<br>
-| 安装方法 | 推荐指数 | 原因 |
+| 使用方法 | 推荐指数 | 原因 |
 |--------|--|--|
 | 使用最新的[venera-prime](https://github.com/venera-app/venera-prime) | ⭐⭐⭐⭐⭐ | 可以同时使用多个仓库源 |
 | 自行备份原仓库地址 | ⭐⭐⭐ | 来回切换比较麻烦 |
