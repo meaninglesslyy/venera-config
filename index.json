@@ -1,5 +1,12 @@
 [
     {
+        "name": "鸟鸟韩漫",
+        "fileName": "translated/nnhanman.js",
+        "key": "nnhanman",
+        "version": "1.1.0",
+        "description": "汉化漫画"
+    },
+    {
         "name": "MangaForFree",
         "fileName": "raw_comic/mangaforfree.js",
         "key": "mangaforfree",
