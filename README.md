@@ -4,7 +4,7 @@
 
 
 # 使用方法
-## 方法一<br>能直接用于在venera地址栏使用的导入链接：
+## 方法一<br>在venera地址栏填写仓库链接：
 ```text
 https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/index.json
 ```
