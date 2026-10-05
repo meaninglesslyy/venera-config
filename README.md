@@ -26,6 +26,7 @@ https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 <br>------------------------------------------------------<br> 
 
 # GUIDE
+# [详细更新日志与功能介绍](https://github.com/meaninglesslyy/venera-config/blob/main/ALL-introduce.md)
 ## [真人图包](https://github.com/meaninglesslyy/venera-config/tree/main/real_person_photo_book)
 - [4khd](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/4khd.js)
 - [cosplaytele](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/cosplaytele.js)
