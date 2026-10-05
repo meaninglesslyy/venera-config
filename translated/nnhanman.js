@@ -202,7 +202,7 @@ class Nnhanman extends ComicSource {
     // 探索页：全站漫画列表，共 147 页
     explore = [
         {
-            title: "全部漫画",
+            title: "鸟鸟韩漫",
             type: "multiPageComicList",
             load: async (page) => {
                 let p = "/comics/all/ob/time/st/all"
@@ -217,7 +217,7 @@ class Nnhanman extends ComicSource {
     ]
 
     category = {
-        title: "分类",
+        title: "鸟鸟韩漫",
         parts: [
             {
                 name: "标签",
