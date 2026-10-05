@@ -25,7 +25,7 @@ https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 <img width="345" height="195" alt="屏幕截图 2026-09-13 144615" src="https://github.com/user-attachments/assets/0b3210e5-4520-4e68-963d-36b4230bb15d" />
 <br>------------------------------------------------------<br> 
 
-# 分类
+# GUIDE
 ## [真人图包](https://github.com/meaninglesslyy/venera-config/tree/main/real_person_photo_book)
 - [4khd](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/4khd.js)
 - [cosplaytele](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/cosplaytele.js)
