@@ -167,7 +167,7 @@ class Nnhanman extends ComicSource {
 
     minAppVersion = "1.6.0"
 
-    url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/nnhanman.js"
+    url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/translated/nnhanman.js"
 
     settings = {
         baseUrl: {
