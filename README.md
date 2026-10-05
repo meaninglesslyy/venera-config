@@ -12,8 +12,7 @@ https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/index.json
 | 使用方法 | 推荐指数 | 原因 |
 |--------|--|--|
 | 使用最新的[venera-prime](https://github.com/venera-app/venera-prime) | ⭐⭐⭐⭐⭐ | 可以同时使用多个仓库源 |
-| 自行备份原仓库地址 | ⭐⭐⭐ | 来回切换比较麻烦 |
-| 使用方法二本地文件离线导入 | 不推荐 | 不能及时接收本仓库更新 | <br>
+| 自行备份原仓库地址 | ⭐⭐⭐ | 来回切换比较麻烦 | <br>
 
 原仓库地址:
 ```text
@@ -25,15 +24,7 @@ https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 <br>------------------------------------------------------<br> 
 <br><img width="345" height="195" alt="屏幕截图 2026-09-13 144615" src="https://github.com/user-attachments/assets/0b3210e5-4520-4e68-963d-36b4230bb15d" />
 <br>------------------------------------------------------<br> 
-## 方法二<br>源文件导入
-下载对应.js文件后导入veneral
-  
- 导入方式<br>
-  漫画源→使用配置文件→选中.js文件打开  
-  <img width="350" height="600" alt="图片" src="https://github.com/user-attachments/assets/05c1ffe6-ab0a-4bb4-ad46-19a406c152c7" />
-  <br>----------------------------------------------------------------------------<br> 
-  <img width="478" height="187" alt="Image" src="https://github.com/user-attachments/assets/9628759b-fbd4-471d-b227-ccff9570ece3" />
-  <br>----------------------------------------------------------------------------<br> 
+
 # 分类
 ## [真人图包](https://github.com/meaninglesslyy/venera-config/tree/main/real_person_photo_book)
 - [4khd](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/4khd.js)
