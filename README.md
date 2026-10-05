@@ -13,7 +13,8 @@ https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/index.json
 |--------|--|--|
 | 使用最新的[venera-prime](https://github.com/venera-app/venera-prime) | ⭐⭐⭐⭐⭐ | 可以同时使用多个仓库源 |
 | 自行备份原仓库地址 | ⭐⭐⭐ | 来回切换比较麻烦 |
-| 使用方法二本地文件离线导入 | 不推荐 | 不能及时接收本仓库更新 |<br>
+| 使用方法二本地文件离线导入 | 不推荐 | 不能及时接收本仓库更新 | <br>
+
 原仓库地址:
 ```text
 https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
