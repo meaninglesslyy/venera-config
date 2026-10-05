@@ -38,6 +38,7 @@ https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 - [kiutaku](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/kiutaku.js)
 - [Mitaku](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/mitaku.js)
 - [Ososedki](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/ososedki.js)
+- [绅士会所](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/hentaiclub.js)
 
 ## [生肉](https://github.com/meaninglesslyy/venera-config/tree/main/raw_comic)
 - [mangaforfree](https://github.com/meaninglesslyy/venera-config/blob/main/raw_comic/mangaforfree.js)
