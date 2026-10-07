@@ -2,7 +2,7 @@ class MangaForFree extends ComicSource {
 
     name = "MangaForFree"
     key = "mangaforfree"
-    version = "0.7.3"
+    version = "0.7.4"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/raw_comic/mangaforfree.js"
 
@@ -505,6 +505,10 @@ class MangaForFree extends ComicSource {
         let chapters = new Map()
         let seen = new Set()
         // 官方扩展同款：英文站排除 Raw 章节
+        // ⚠️ 站点把最新章排在列表最上面（chapter-100 → chapter-1），先收进数组、
+        // 再反转插入 Map，让阅读顺序（旧 → 新）与阅读器的「下一章 / 上一章」
+        // 方向对齐 —— 否则读第 78 話按「下一章」会跑到第 77 話。
+        let pairs = []
         doc.querySelectorAll("ul.main.version-chap li.wp-manga-chapter > a").forEach(a => {
             let href = a.attributes["href"]
             let name = a.text.trim()
@@ -512,8 +516,9 @@ class MangaForFree extends ComicSource {
             seen.add(href)
             let epId = this.slugFromUrl(href)
             // 章节名会成为下载文件名，必须清洗掉 Windows 非法字符（否则 FileSystemException）
-            chapters.set(epId, this.sanitizeChapterName(name, epId))
+            pairs.push([epId, this.sanitizeChapterName(name, epId)])
         })
+        for (let i = pairs.length - 1; i >= 0; i--) chapters.set(pairs[i][0], pairs[i][1])
         doc.dispose()
         return chapters
     }
