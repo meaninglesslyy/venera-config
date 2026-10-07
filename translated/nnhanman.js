@@ -163,7 +163,8 @@ class Nnhanman extends ComicSource {
 
     key = "nnhanman"
 
-    version = "1.1.0"
+    // 1.1.1 修 bug：章节 map 反转成阅读顺序（旧→新），修「下一章」往旧章走
+    version = "1.1.1"
 
     minAppVersion = "1.6.0"
 
@@ -324,13 +325,18 @@ class Nnhanman extends ComicSource {
                 let descEl = doc.querySelector("p.txtDesc")
                 let desc = descEl ? descEl.text.trim().replace(/^介绍[:：]\s*/, "") : ""
 
-                let chapters = {}
+                let chPairs = []
                 for (const a of doc.querySelectorAll("ul.Drama li a")) {
                     let h = elAttr(a, "href")
                     if (h.indexOf("/chapter-") < 0) continue
                     let sp = a.querySelector("span")
-                    chapters[h] = sp ? sp.text.trim() : a.text.trim()
+                    chPairs.push([h, sp ? sp.text.trim() : a.text.trim()])
                 }
+                // ⚠️ 站点把最新章排在列表最上面（chapter-86107 → chapter-1），
+                // 必须反转成阅读顺序（旧 → 新）再进 map，否则阅读器里的
+                // 「下一章」会往旧章走（第78話 → 第77話，而不是第79話）。
+                let chapters = {}
+                for (let i = chPairs.length - 1; i >= 0; i--) chapters[chPairs[i][0]] = chPairs[i][1]
 
                 let tags = {}
                 if (author) tags["作者"] = [author]
