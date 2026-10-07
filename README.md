@@ -33,7 +33,6 @@ https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 - [JJCOS](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/jjcos.js)
 - [FoamGirl](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/foamgirl.js)
 - [buondua](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/buondua.js)
-- [Misskon](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/misskon.js)
 - [V2PH](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/v2ph.js)
 - [Xiutaku](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/xiutaku.js)
 - [kiutaku](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/kiutaku.js)
