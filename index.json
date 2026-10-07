@@ -3,21 +3,21 @@
         "name": "鸟鸟韩漫",
         "fileName": "translated/nnhanman.js",
         "key": "nnhanman",
-        "version": "1.1.0",
+        "version": "1.1.1",
         "description": "汉化漫画,当前网址失效时请在设置页手动切换或输入最新网址"
     },
     {
         "name": "MangaForFree",
         "fileName": "raw_comic/mangaforfree.js",
         "key": "mangaforfree",
-        "version": "0.7.3",
+        "version": "0.7.4",
         "description": "生肉漫画"
     },
     {
         "name": "Manga18FX",
         "fileName": "raw_comic/manga18fx.js",
         "key": "manga18fx",
-        "version": "1.0.1",
+        "version": "1.0.2",
         "description": "生肉漫画"
     },
     {
