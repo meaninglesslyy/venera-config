@@ -56,13 +56,6 @@
         "description": "点击tag的网盘链接即可下载完整版套图，解压密码在详情页描述里"
     },
     {
-        "name": "MissKon",
-        "fileName": "real_person_photo_book/misskon.js",
-        "key": "misskon",
-        "version": "1.1.0",
-        "description": "原站内均为预览，所有套图仅放出一部分，点击tag的网盘链接即可下载完整版套图，解压密码在详情页描述里"
-    },
-    {
         "name": "V2PH",
         "fileName": "real_person_photo_book/v2ph.js",
         "key": "v2ph",
