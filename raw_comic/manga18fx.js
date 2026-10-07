@@ -3,7 +3,7 @@
 class Manga18fx extends ComicSource {
     name = "Manga18FX"
     key = "manga18fx"
-    version = "1.0.1"
+    version = "1.0.2"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/raw_comic/manga18fx.js"
 
@@ -299,7 +299,10 @@ class Manga18fx extends ComicSource {
 
     /** `#chapterlist` 里的全量章节（站点一次直出，343 章也全在 DOM 里） */
     parseChapters(doc) {
-        let chapters = {}
+        // ⚠️ 站点把最新章排在列表最上面（chapter-319 → chapter-1），先收进数组、
+        // 再反转插入 object，让阅读顺序（旧 → 新）与阅读器的「下一章 / 上一章」
+        // 方向对齐 —— 否则读第 78 話按「下一章」会跑到第 77 話。
+        let pairs = []
         for (let li of doc.querySelectorAll("#chapterlist .row-content-chapter li")) {
             let a = li.querySelector("a.chapter-name") || li.querySelector("a")
             if (!a) continue
@@ -307,8 +310,10 @@ class Manga18fx extends ComicSource {
             if (!href) continue
             let name = this.cleanText(a.text) || href
             // epId 用完整站内路径，无歧义，loadEp 直接吃
-            chapters[href] = name
+            pairs.push([href, name])
         }
+        let chapters = {}
+        for (let i = pairs.length - 1; i >= 0; i--) chapters[pairs[i][0]] = pairs[i][1]
         return chapters
     }
 
