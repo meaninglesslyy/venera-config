@@ -109,7 +109,7 @@
         "fileName": "normal_comic/bilimanga.js",
         "key": "bilimanga",
         "version": "1.2.0",
-        "description": "正经漫画"
+        "description": "正经漫画|由于venera缺少对应的解析引擎，部分漫画报错(Exception Could not decompress image),暂时无法在.js文件层面解决"
     },
     {
         "name": "如漫画",
