@@ -1,4 +1,11 @@
 [
+        {
+        "name": "公告帖，请勿下载",
+        "fileName": "announcement",
+        "key": "announcement",
+        "version": "9.9.9",
+        "description": "投稿新网址、发现bug请务必在本仓库Issues提出"
+    },
     {
         "name": "鸟鸟韩漫",
         "fileName": "translated/nnhanman.js",
