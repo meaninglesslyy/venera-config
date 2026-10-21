@@ -3,15 +3,15 @@
 class FourKHDv2 extends ComicSource {
     name = "4KHD"
     key = "fourkhd"
-    version = "2.0.6"
+    version = "2.0.7"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/4khd.js"
 
-    // 入口（会 302 到当前 uuss.uk 网关，网关页里有当前主机列表）
-    entryUrl = "https://4khd.com/"
+    // 入口（2026-10-21 起 4khd.com = www.4khd.com 本体即真站，无 302）
+    entryUrl = "https://www.4khd.com/"
 
-    // 发现失败时的回落值（2026-09-30 实测真站）
-    apiBase = "https://qhrzv.uuss.uk"
+    // 发现失败时的回落值（2026-10-21 实测：www.4khd.com 本体即真站）
+    apiBase = "https://www.4khd.com"
 
     // 本次会话是否已做过域名发现
     _resolved = false
@@ -121,15 +121,18 @@ class FourKHDv2 extends ComicSource {
     }
 
     // ============ 域名发现 ============
-    // 入口 4khd.com 302 → 网关页（y5gx.uuss.uk/4khd.php），网关页里有个 sites 数组：
-    //   const sites = ['https://qhrzv.uuss.uk', 'https://jrimj.ssuu.uk'];
+    // 2026-10-21 起 www.4khd.com 本体即真站（首页 12 卡片 + REST 全通）：
+    //   入口本体先试 → 命中即回，省一个 302。
+    // 早期架构（4khd.com → uuss.uk 网关 → sites 数组随机子域）已退役，但保留收集逻辑兜底：
+    //   万一哪天真站又搬回随机子域，入口页面里的 uuss/ssuu 主机仍能补进候选池。
     // 逐个探测哪个是真 API：要求返回 JSON **且第一条 content 里有 <img>**。
     // 空壳镜像（doudou.me/hecoq 这类）content 全是 `<p>{slug}</p>`，探测直接淘汰。
     resolveBases() {
         var self = this
         if (this._resolved) return Promise.resolve()
-        var entries = ["https://4khd.com/", "https://www.4khd.com/", "https://y5gx.uuss.uk/4khd.php"]
-        var hosts = []
+        // 探测顺序：入口本体优先（当前架构的真站），页面挖出的 uuss/ssuu 池兜底
+        var hosts = ["https://www.4khd.com", "https://4khd.com"]
+        var entries = ["https://www.4khd.com/", "https://4khd.com/", "https://y5gx.uuss.uk/4khd.php"]
         var idx = 0
         function collect() {
             if (idx >= entries.length) return Promise.resolve()
@@ -140,7 +143,7 @@ class FourKHDv2 extends ComicSource {
                     var re = /['"]https?:\/\/([a-z0-9-]+\.(?:uuss|ssuu)\.uk)['"]/gi
                     var m
                     while ((m = re.exec(r.body)) !== null) {
-                        if (hosts.indexOf(m[1]) < 0) hosts.push(m[1])
+                        if (hosts.indexOf("https://" + m[1]) < 0) hosts.push("https://" + m[1])
                     }
                 }
                 return collect()
@@ -150,7 +153,7 @@ class FourKHDv2 extends ComicSource {
             var i = 0
             function tryNext() {
                 if (i >= hosts.length) return Promise.resolve()
-                var base = "https://" + hosts[i]
+                var base = hosts[i]
                 i++
                 return self.probeApi(base).then((ok) => {
                     if (ok) { self.apiBase = base; return }
