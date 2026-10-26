@@ -6,54 +6,75 @@
         "version": "9.9.9",
         "description": "投稿新网址、发现bug请务必在本仓库Issues提出"
     },
+        {
+        "name": "---分割线---",
+        "fileName": "announcement",
+        "key": "announcement",
+        "version": "",
+        "description": "以下内容是汉画漫画"
+    },
     {
         "name": "鸟鸟韩漫",
         "fileName": "translated/nnhanman.js",
         "key": "nnhanman",
         "version": "1.1.1",
-        "description": "汉化漫画,当前网址失效时请在设置页手动切换或输入最新网址"
+        "description": "当前网址失效时请在设置页手动切换或输入最新网址"
+    },
+        {
+        "name": "---分割线---",
+        "fileName": "announcement",
+        "key": "announcement",
+        "version": "",
+        "description": "以下内容是生肉漫画(未翻译)"
     },
     {
         "name": "MangaForFree",
         "fileName": "raw_comic/mangaforfree.js",
         "key": "mangaforfree",
         "version": "0.7.4",
-        "description": "生肉漫画"
+        "description": ""
     },
     {
         "name": "Manga18FX",
         "fileName": "raw_comic/manga18fx.js",
         "key": "manga18fx",
         "version": "1.0.2",
-        "description": "生肉漫画"
+        "description": ""
+    },
+        {
+        "name": "---分割线---",
+        "fileName": "announcement",
+        "key": "announcement",
+        "version": "9.9.9",
+        "description": "以下内容是真人图包"
     },
     {
         "name": "4KHD",
         "fileName": "real_person_photo_book/4khd.js",
         "key": "fourkhd",
         "version": "2.0.7",
-        "description": "真人图包"
+        "description": ""
     },
     {
         "name": "CosplayTele",
         "fileName": "real_person_photo_book/cosplaytele.js",
         "key": "cosplaytele",
         "version": "1.7.0",
-        "description": "真人图包"
+        "description": ""
     },
     {
         "name": "JJcos",
         "fileName": "real_person_photo_book/jjcos.js",
         "key": "jjcos",
         "version": "1.3.0",
-        "description": "真人图包"
+        "description": ""
     },
     {
         "name": "FoamGirl",
         "fileName": "real_person_photo_book/foamgirl.js",
         "key": "foamgirl",
         "version": "1.2.1",
-        "description": "真人图包"
+        "description": ""
     },
     {
         "name": "Buon Dua",
@@ -81,7 +102,7 @@
         "fileName": "real_person_photo_book/kiutaku.js",
         "key": "kiutaku",
         "version": "1.1.0",
-        "description": "真人图包，本站点对网络IP纯净度要求较高，建议使用质量较好的节点或免费部署CFnew家宽节点"
+        "description": "本站点对网络IP纯净度要求较高，建议使用质量较好的节点或免费部署CFnew家宽节点"
     },
     {
         "name": "Mitaku",
@@ -102,34 +123,41 @@
         "fileName": "real_person_photo_book/hentaiclub.js",
         "key": "hentaiclub",
         "version": "1.0.0",
-        "description": "真人图包"
+        "description": ""
+    },
+        {
+        "name": "---分割线---",
+        "fileName": "announcement",
+        "key": "announcement",
+        "version": "",
+        "description": "以下内容是普通漫画"
     },
     {
         "name": "51漫画",
         "fileName": "normal_comic/51manga.js",
         "key": "manga51",
         "version": "1.1.0",
-        "description": "正经漫画"
+        "description": ""
     },
     {
         "name": "嗶哩漫畫",
         "fileName": "normal_comic/bilimanga.js",
         "key": "bilimanga",
         "version": "1.2.0",
-        "description": "正经漫画|由于venera缺少相关解析引擎，部分漫画报错(Exception Could not decompress image),暂时无法在.js文件层面解决"
+        "description": "由于venera缺少相关解析引擎，部分漫画报错(Exception Could not decompress image),暂时无法在.js文件层面解决"
     },
     {
         "name": "如漫画",
         "fileName": "normal_comic/rumanhua.js",
         "key": "rumanhua",
         "version": "1.0.0",
-        "description": "正经漫画"
+        "description": ""
     },
     {
         "name": "zero搬运网",
         "fileName": "normal_comic/zerobyw33.js",
         "key": "zerobyw33",
         "version": "1.2.0",
-        "description": "正经漫画"
+        "description": ""
     }
 ]
