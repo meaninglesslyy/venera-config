@@ -4,7 +4,7 @@
 
 [Mihon](https://github.com/mihonapp/mihon) 拥有海量漫画站资源，但无法在 iOS 设备上使用；而 [venera-configs](https://github.com/venera-app/venera-configs) 又未收录部分站点。本项目应运而生——借助可运行于 iOS 的 **venera** 与漫画源 `.js` 文件，实现平替效果。
 
-仓库内文件的前期准备、部分解密思路参考了 GitHub 开源项目与 issues 区同好大佬的研究，代码部分由 deepseek-v4-flash / deepseek-v4-pro / deepseek-v4.1-flash 编写，技术文档来源于原版 [venera-configs](https://github.com/venera-app/venera-configs)。可能仍有瑕疵，敬请包容。
+源文件编写的前期准备由本人完成，部分站点解密思路参考了 GitHub 开源项目与 issues 区同好大佬的研究，代码部分由 deepseek-v4-flash / deepseek-v4-pro / deepseek-v4.1-flash 编写，技术文档来源于原版 [venera-configs](https://github.com/venera-app/venera-configs)。可能仍有瑕疵，敬请包容。
 
 ---
 
