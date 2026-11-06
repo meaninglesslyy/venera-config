@@ -2,7 +2,7 @@
 
 > 持续更新 · 欢迎投稿 · 共 **18** 个源，覆盖真人图包 / 生肉 / 汉化 / 正经漫画
 
-[Mihon](https://github.com/mihonapp/mihon) 拥有海量漫画站资源，但无法在 iOS 设备上使用；且 [venera-configs](https://github.com/venera-app/venera-configs) 未收录其中大部分部分站点。本项目应运而生——借助可运行于 iOS 的 **venera** 与漫画源 `.js` 文件，实现平替效果。
+[Mihon](https://github.com/mihonapp/mihon) 拥有海量漫画站资源，但无法在 iOS 设备上使用，且 [venera-configs](https://github.com/venera-app/venera-configs) 未收录其中大部分站点。本项目应运而生——借助可运行于 iOS 的 **venera** 与漫画源 `.js` 文件，实现平替效果。
 
 源文件编写的前期准备由本人完成，部分站点解密思路参考了 GitHub 开源项目与 issues 区大佬的研究，代码部分由 deepseek-v4-flash / deepseek-v4-pro / deepseek-v4.1-flash 编写，技术文档来源于原版 [venera-configs](https://github.com/venera-app/venera-configs)。可能仍有瑕疵，敬请包容。
 
