@@ -1,6 +1,6 @@
 # Venera 多平台漫画源合集
 
-> 持续更新 · 欢迎投稿 · 共 **18** 个源，覆盖真人图包 / 生肉 / 汉化 / 正经漫画
+> 持续更新 · 欢迎投稿 · 共 **19** 个源，覆盖真人图包 / 生肉 / 汉化 / 正经漫画
 
 [Mihon](https://github.com/mihonapp/mihon) 拥有海量漫画站资源，但无法在 iOS 设备上使用，且 [venera-configs](https://github.com/venera-app/venera-configs) 未收录其中大部分站点。本项目应运而生——借助可运行于 iOS 的 **venera** 与漫画源 `.js` 文件，实现平替效果。
 
@@ -57,7 +57,7 @@ https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 
 > 详细更新日志与功能介绍见 **[ALL-introduce.md](https://github.com/meaninglesslyy/venera-config/blob/main/ALL-introduce.md)**。
 
-### 真人图包（11）
+### 真人图包（12）
 
 | 源 | 文件 |
 | :--- | :--- |
@@ -72,6 +72,7 @@ https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 | Mitaku | [mitaku.js](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/mitaku.js) |
 | Ososedki | [ososedki.js](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/ososedki.js) |
 | 绅士会所 | [hentaiclub.js](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/hentaiclub.js) |
+| everia.club | [everiaclub.js](https://github.com/meaninglesslyy/venera-config/blob/main/real_person_photo_book/everiaclub.js)
 
 ### 生肉（2）
 
