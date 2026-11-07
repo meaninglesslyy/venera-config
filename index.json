@@ -125,7 +125,14 @@
         "version": "1.0.0",
         "description": ""
     },
-        {
+    {
+        "name": "Everia Club",
+        "fileName": "real_person_photo_book/everiaclub.js",
+        "key": "everiaclub",
+        "version": "1.0.2",
+        "description": ""
+    },
+    {
         "name": "普通漫画⬇⬇⬇",
         "fileName": "announcement",
         "key": "announcement",
