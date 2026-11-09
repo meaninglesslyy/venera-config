@@ -3,7 +3,7 @@
 class EveriaClub extends ComicSource {
     name = "Everia Club"
     key = "everiaclub"
-    version = "1.0.2"
+    version = "1.1.0"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/everiaclub.js"
 
@@ -13,12 +13,18 @@ class EveriaClub extends ComicSource {
     // 空串会让 app 抛 "relative URL without a base"。
     SITE_ICON = "https://everia.club/wp-content/uploads/2026/05/cropped-everiaicon-192x192.webp"
 
-    // 详情页缓存：loadInfo 和 loadEp 解析的是同一张详情页，只打一次请求。
+    // 列表/搜索卡片缓存：详情页直接用这里已有的 title/cover 秒开，不再请求 HTML。
+    cardCache = {}
+    // 详情页缓存：第 1 页先入，后台预取再把 2..N 页的图片 URL 补进来。
     detailCache = {}
-    // 同一篇详情的并发请求合并（loadInfo / loadEp 同时触发时不重复翻页）。
+    // 同一篇详情的 loadInfo 并发合并。
     detailLoading = {}
-    // 长图集分页上限（wp_link_pages 每页 15~16 张），防止异常页面无限翻页。
+    // 同一篇详情的 loadEp 并发合并，避免重复翻页。
+    epLoading = {}
+    // 长图集分页上限（每页 15~16 张），防止异常页面无限翻页。
     MAX_DETAIL_PAGES = 60
+    // 后续页并发数。站点对连续请求敏感，2 路比一次全并发稳。
+    PAGE_CONCURRENCY = 2
 
     headers() {
         return {
@@ -32,7 +38,7 @@ class EveriaClub extends ComicSource {
     /**
      * 站点（Cloudflare + LiteSpeed）会偶发直接掐断连接，报
      * `UnexpectedEof / peer closed connection without sending TLS close_notify`。
-     * 这里最多试 3 次、每次间隔 500ms，兜住瞬时 reset；全失败才抛给 app。
+     * 最多试 3 次、每次间隔 500ms；全失败才抛给 app。
      */
     async fetchPage(url) {
         let last = null
@@ -104,7 +110,6 @@ class EveriaClub extends ComicSource {
     /**
      * The Post Grid 把总页数直接渲染在分页容器上：
      *   <div class="rt-pagination-wrap" data-total-pages="508" ...>
-     * 比从窗口页码反推可靠得多。拿不到才退回请求页码。
      */
     parseTotalPages(doc, page) {
         let wrap = doc.querySelector(".rt-pagination-wrap") || doc.querySelector("[data-total-pages]")
@@ -131,11 +136,16 @@ class EveriaClub extends ComicSource {
         let title = this.cleanText(link.text)
         if (!title && img) title = this.cleanText(img.attributes["alt"] || img.attributes["title"] || "")
 
-        return new Comic({
+        let comic = new Comic({
             id: id,
             title: title || id,
             cover: this.abs(cover) || this.SITE_ICON,
         })
+        // 详情页秒开：列表里已经有 title/cover，点进去就不再等 HTML。
+        if (!this.cardCache[id]) {
+            this.cardCache[id] = { title: comic.title, cover: comic.cover }
+        }
+        return comic
     }
 
     parseGrid(html, page) {
@@ -151,9 +161,6 @@ class EveriaClub extends ComicSource {
         return { comics: comics, maxPage: maxPage }
     }
 
-    /**
-     * @param path {string} ""（首页）或 "japan-gallery" 这类分类路径
-     */
     async fetchGrid(path, page) {
         let p = page || 1
         let rel = String(path == null ? "" : path).trim().replace(/^\/+|\/+$/g, "")
@@ -169,10 +176,6 @@ class EveriaClub extends ComicSource {
 
     // ==================== 搜索 ====================
 
-    /**
-     * OceanWP 搜索模板：`<article id="post-123">`，
-     * 封面 `img.wp-post-image`，标题 `h2.search-entry-title a`。
-     */
     parseSearchCard(el) {
         let link = el.querySelector("h2.search-entry-title a[href]") || el.querySelector("h3 a[href]") || el.querySelector("a[href]")
         if (!link) return null
@@ -187,14 +190,17 @@ class EveriaClub extends ComicSource {
         let title = this.cleanText(link.text)
         if (!title && img) title = this.cleanText(img.attributes["alt"] || img.attributes["title"] || "")
 
-        return new Comic({
+        let comic = new Comic({
             id: id,
             title: title || id,
             cover: this.abs(cover) || this.SITE_ICON,
         })
+        if (!this.cardCache[id]) {
+            this.cardCache[id] = { title: comic.title, cover: comic.cover }
+        }
+        return comic
     }
 
-    /** 页码链接的最大值 + 当前页（末页的当前页是 span，不在链接里）。 */
     parseSearchMaxPage(doc, page) {
         let box = doc.querySelector(".oceanwp-pagination")
         if (!box) return page || 1
@@ -236,9 +242,7 @@ class EveriaClub extends ComicSource {
         let raw = String(keyword == null ? "" : keyword).trim()
         if (!raw) return { comics: [], maxPage: 0 }
         let kw = encodeURIComponent(raw)
-        // 必须走路径式搜索：站点前面的 Cloudflare/LiteSpeed 会掐断带 `?` 的搜索请求
-        // （app 里表现为 RhttpUnknownException / UnexpectedEof）。
-        // `/search/{kw}/` 与 `/search/{kw}/page/N/` 是 WordPress 的规范路径，实测稳定。
+        // 必须走路径式搜索：带 `?s=` 会被 Cloudflare/LiteSpeed 掐断。
         let url = this.base + "/search/" + kw + "/" + (p > 1 ? "page/" + p + "/" : "")
         let html = await this.fetchPage(url)
         return this.parseSearch(html, p)
@@ -247,9 +251,8 @@ class EveriaClub extends ComicSource {
     // ==================== 详情 ====================
 
     /**
-     * 正文图只认 `figure.wp-block-image`。
-     * 这个主题的 HTML 偶尔会被上游广告脚本破坏嵌套（`.entry-content` 在
-     * csslib 里匹配不到），figure 是稳定的，而且天然排除侧栏推荐缩略图。
+     * 正文图只认 `figure.wp-block-image`，天然排除侧栏推荐缩略图；
+     * `.entry-content` 在部分破损 HTML 里匹配不到，只作兜底。
      */
     extractImages(doc) {
         let out = []
@@ -267,10 +270,7 @@ class EveriaClub extends ComicSource {
     }
 
     /**
-     * WordPress `wp_link_pages` 的分页条：
-     *   <div class="page-links">Pages: <span class="current">1</span>
-     *     <a class="post-page-numbers" href=".../2/">2</a> ...</div>
-     * 返回按页码升序的 [{n, url}]。长图集每页 15~16 张。
+     * WordPress `wp_link_pages` 的分页条，返回按页码升序的 [{n, url}]。
      */
     extractPageLinks(doc) {
         let box = doc.querySelector(".page-links")
@@ -292,14 +292,18 @@ class EveriaClub extends ComicSource {
         return out
     }
 
-    parsePageData(html) {
+    parsePageImages(html) {
         let doc = new HtmlDocument(html)
         let images = this.extractImages(doc)
-        let links = this.extractPageLinks(doc)
         doc.dispose()
-        return { images: images, links: links }
+        return images
     }
 
+    /**
+     * loadInfo 只解析第 1 页：
+     * title / cover / tags / 第 1 页图片 / 分页链接。
+     * 后续页留到 loadEp。
+     */
     parseDetail(html, id) {
         let doc = new HtmlDocument(html)
 
@@ -311,7 +315,6 @@ class EveriaClub extends ComicSource {
             if (h1) title = this.cleanText(h1.text)
         }
 
-        // 封面：og:image 就是站点自己挑的 400x600 缩略封面，跟列表里那张一致。
         let cover = ""
         let og = doc.querySelector('meta[property="og:image"]')
         if (og) cover = og.attributes["content"] || ""
@@ -319,32 +322,11 @@ class EveriaClub extends ComicSource {
         let images = this.extractImages(doc)
         let pageLinks = this.extractPageLinks(doc)
 
-        // 标签
         let tagList = []
         let tagNodes = doc.querySelectorAll(".post-tags a[rel=tag]")
         for (let i = 0; i < tagNodes.length; i++) {
             let t = this.cleanText(tagNodes[i].text)
             if (t && tagList.indexOf(t) < 0) tagList.push(t)
-        }
-
-        // 侧栏 Popular Posts 当推荐位（8 条）
-        let recommend = []
-        let recNodes = doc.querySelectorAll(".wli_popular_posts-listing li")
-        for (let i = 0; i < recNodes.length; i++) {
-            let link = recNodes[i].querySelector("a[href]")
-            if (!link) continue
-            let rid = this.idFromHref(link.attributes["href"])
-            if (!rid || rid === id) continue
-            let img = recNodes[i].querySelector("img")
-            let rc = img ? (img.attributes["src"] || "") : ""
-            if (rc.indexOf("data:image") === 0) rc = ""
-            let rt = this.cleanText(link.text)
-            if (!rt && img) rt = this.cleanText(img.attributes["title"] || img.attributes["alt"] || "")
-            recommend.push(new Comic({
-                id: rid,
-                title: rt || rid,
-                cover: this.abs(rc) || this.SITE_ICON,
-            }))
         }
 
         doc.dispose()
@@ -355,14 +337,19 @@ class EveriaClub extends ComicSource {
         if (!cover && images.length) cover = images[0]
         if (!cover) cover = this.SITE_ICON
 
+        let pages = 1
+        for (let i = 0; i < pageLinks.length; i++) {
+            if (pageLinks[i].n > pages) pages = pageLinks[i].n
+        }
+
         return {
             title: title,
             cover: cover,
             images: images,
             tags: tags,
-            recommend: recommend,
             pageLinks: pageLinks,
-            pages: 1,
+            pages: pages,
+            loadedAll: pageLinks.length === 0,
             count: images.length,
         }
     }
@@ -386,46 +373,72 @@ class EveriaClub extends ComicSource {
     }
 
     async loadDetail(key) {
-        let firstUrl = this.detailUrl(key)
-        let info = this.parseDetail(await this.fetchPage(firstUrl), key)
-
-        // 多页图集：第一页的 page-links 给出 2..N，逐页抓完再合并。
-        // 不翻页的话阅读器永远只能拿到第一页（15~16 张）。
-        let seen = {}
-        seen[firstUrl] = true
-        let queue = info.pageLinks.slice()
-        let fetched = 1
-        let maxPage = 1
-
-        while (queue.length && fetched < this.MAX_DETAIL_PAGES) {
-            queue.sort((a, b) => a.n - b.n)
-            let item = queue.shift()
-            if (!item || !item.url || seen[item.url]) continue
-            seen[item.url] = true
-
-            let data = this.parsePageData(await this.fetchPage(item.url))
-            for (let i = 0; i < data.images.length; i++) {
-                if (info.images.indexOf(data.images[i]) < 0) info.images.push(data.images[i])
-            }
-            // 分页条若只显示窗口页码，后续页里可能出现更靠后的链接。
-            for (let i = 0; i < data.links.length; i++) {
-                if (!seen[data.links[i].url]) queue.push(data.links[i])
-            }
-
-            fetched++
-            if (item.n > maxPage) maxPage = item.n
-            // 站点对连续请求敏感，页间留 300ms，避免被 reset。
-            await new Promise((resolve) => setTimeout(resolve, 300))
-        }
-
-        info.pages = Math.max(fetched, maxPage)
-        info.count = info.images.length
+        // 只抓第 1 页，详情页立刻返回。
+        let info = this.parseDetail(await this.fetchPage(this.detailUrl(key)), key)
         return info
+    }
+
+    /**
+     * 并发池：按原顺序返回每一页的图片数组。
+     * 任何一页在 3 次重试后仍失败，整体抛错，不静默丢页。
+     */
+    async fetchPageBatch(items) {
+        let results = new Array(items.length)
+        let next = 0
+        let self = this
+        async function worker() {
+            while (next < items.length) {
+                let i = next++
+                results[i] = self.parsePageImages(await self.fetchPage(items[i].url))
+            }
+        }
+        let workers = []
+        let n = Math.min(this.PAGE_CONCURRENCY, items.length)
+        for (let i = 0; i < n; i++) workers.push(worker())
+        await Promise.all(workers)
+        return results
+    }
+
+    /**
+     * 后台预取整章：第 1 页 + 2..N 页的 HTML，只拿图片 URL，不下载图片。
+     * 详情页 loadInfo 不 await 它；loadEp 进来时共享同一个 in-flight promise。
+     */
+    prefetchChapter(key) {
+        let pending = this.epLoading[key]
+        if (pending) return pending
+
+        let task = (async () => {
+            let info = await this.getDetail(key)
+            if (!info.loadedAll) await this.loadAllPages(info)
+        })()
+        this.epLoading[key] = task
+        let cleanup = () => {
+            if (this.epLoading[key] === task) delete this.epLoading[key]
+        }
+        task.then(cleanup, cleanup)
+        return task
+    }
+
+    /** loadEp 时补齐 2..N 页，按 URL 去重合并。 */
+    async loadAllPages(info) {
+        let queue = info.pageLinks.slice(0, this.MAX_DETAIL_PAGES - 1)
+        if (!queue.length) {
+            info.loadedAll = true
+            return
+        }
+        let results = await this.fetchPageBatch(queue)
+        for (let i = 0; i < results.length; i++) {
+            let images = results[i] || []
+            for (let j = 0; j < images.length; j++) {
+                if (info.images.indexOf(images[j]) < 0) info.images.push(images[j])
+            }
+        }
+        info.loadedAll = true
+        info.count = info.images.length
     }
 
     // ==================== 探索页 ====================
 
-    // 按网站首页放：就是首页最新图包的分页列表。
     explore = [
         {
             title: "Everia Club",
@@ -436,8 +449,6 @@ class EveriaClub extends ComicSource {
 
     // ==================== 分类页 ====================
 
-    // 按原站五个入口：JAPAN / KOREA / CHINA / COSPLAY / THAILAND。
-    // 除 COSPLAY 外全部显示中文。
     category = {
         title: "Everia Club",
         parts: [
@@ -489,30 +500,70 @@ class EveriaClub extends ComicSource {
 
     comic = {
         loadInfo: async (id) => {
-            let info = await this.getDetail(id)
+            let key = this.normId(id)
+
+            // 秒开路径：列表/搜索已经拿到 title + cover，详情页不再请求 HTML。
+            // 代价是详情页不再显示那一页的 tags（进入阅读器时会补齐全部图片）。
+            let card = this.cardCache[key]
+            if (card) {
+                // 后台预取整章（页面 HTML + 图片 URL），不阻塞详情页。
+                // 只预取地址，不下载图片本体；loadEp 进来时直接复用这次结果。
+                this.prefetchChapter(key).catch(() => {})
+                return new ComicDetails({
+                    title: card.title || key,
+                    cover: card.cover || this.SITE_ICON,
+                    tags: {},
+                    chapters: { "0": "点击加载全部" },
+                    url: this.detailUrl(key),
+                })
+            }
+
+            // 兜底：从外部链接/粘贴进来看的条目没有卡片缓存，仍然抓第 1 页。
+            let info = await this.getDetail(key)
+            let chapter
+            if (!info.loadedAll) {
+                chapter = info.pages + " 页图集 · 点击加载全部"
+            } else if (info.count > 0) {
+                chapter = info.count + " 张图片"
+            } else {
+                chapter = "全部图片"
+            }
             return new ComicDetails({
-                title: info.title || this.normId(id),
+                title: info.title || key,
                 cover: info.cover || this.SITE_ICON,
                 tags: info.tags,
-                chapters: {
-                    "0": info.count > 0
-                        ? (info.pages > 1 ? info.pages + " 页 · " + info.count + " 张图片" : info.count + " 张图片")
-                        : "全部图片",
-                },
-                url: this.detailUrl(id),
-                recommend: info.recommend,
+                chapters: { "0": chapter },
+                url: this.detailUrl(key),
             })
         },
 
-        // 图包站无章节，详情页一次把整套图给全。
+        // 进阅读器时优先复用后台预取；预取没跑完就等它，失败则重试一次。
         loadEp: async (comicId, epId) => {
+            let key = this.normId(comicId)
             let info = await this.getDetail(comicId)
+
+            if (!info.loadedAll) {
+                let pending = this.epLoading[key]
+                if (pending) {
+                    // 后台预取还在跑就等它；预取失败则吞掉，下面重试一次。
+                    try { await pending } catch (e) { }
+                }
+                if (!info.loadedAll) {
+                    let retry = this.loadAllPages(info)
+                    this.epLoading[key] = retry
+                    let cleanup = () => {
+                        if (this.epLoading[key] === retry) delete this.epLoading[key]
+                    }
+                    retry.then(cleanup, cleanup)
+                    await retry
+                }
+            }
+
             if (!info.images.length) throw "没有解析到图片"
             return { images: info.images }
         },
 
-        // 图片图床无防盗链（带/不带 Referer 字节一致），刻意不实现
-        // onImageLoad / onThumbnailLoad —— 挂自定义头只会顶掉 app 默认 UA。
+        // 图片图床无防盗链，刻意不实现 onImageLoad / onThumbnailLoad。
 
         onClickTag: (namespace, tag) => {
             let t = String(tag == null ? "" : tag).trim()
