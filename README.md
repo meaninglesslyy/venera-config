@@ -110,5 +110,6 @@ https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 
 ## 反馈与更新
 
+- [未收录新网站图源制作投稿](https://github.com/meaninglesslyy/venera-config/issues/10)
 - 站点改版常导致接口失效、无法观看，请及时在 [Issues](https://github.com/meaninglesslyy/venera-config/issues) 区反馈。
 - 更新日志与各源功能说明：[ALL-introduce.md](https://github.com/meaninglesslyy/venera-config/blob/main/ALL-introduce.md)
