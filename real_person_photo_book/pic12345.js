@@ -411,7 +411,7 @@ class Pic12345 extends ComicSource {
     // 探索页 = 原站首页：最新 30 套，共 2146 页（频道 1 的列表，第 1 页就是首页那份）
     explore = [
         {
-            title: "最新套图",
+            title: "美女图库",
             type: "multiPageComicList",
             load: async (page) => {
                 let base = this.getBase()
