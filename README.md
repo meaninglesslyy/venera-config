@@ -14,7 +14,7 @@
 - [图文教程](#图文教程)
 - [源列表](#源列表)
 - [网络提示](#网络提示)
-- [反馈与更新](#反馈与更新)
+- [投稿、反馈与更新](#投稿、反馈与更新)
 
 ---
 
@@ -108,7 +108,7 @@ https://cdn.jsdelivr.net/gh/venera-app/venera-configs@main/index.json
 
 ---
 
-## 反馈与更新
+## 投稿、反馈与更新
 
 - [未收录新网站图源制作投稿](https://github.com/meaninglesslyy/venera-config/issues/10)
 - 站点改版常导致接口失效、无法观看，请及时在 [Issues](https://github.com/meaninglesslyy/venera-config/issues) 区反馈。
