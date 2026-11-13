@@ -133,6 +133,13 @@
         "description": ""
     },
     {
+        "name": "美女图库",
+        "fileName": "real_person_photo_book/pic12345.js",
+        "key": "pic12345",
+        "version": "1.0.1",
+        "description": "本站无需科学上网，裸连即可"
+    },
+    {
         "name": "普通漫画⬇⬇⬇",
         "fileName": "announcement",
         "key": "announcement",
