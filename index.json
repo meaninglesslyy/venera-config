@@ -140,6 +140,13 @@
         "description": "本站无需科学上网，裸连即可"
     },
     {
+        "name": "TWOIMG 美女",
+        "fileName": "real_person_photo_book/twoimg.js",
+        "key": "twoimg_people",
+        "version": "1.1.1",
+        "description": ""
+    }
+    {
         "name": "普通漫画⬇⬇⬇",
         "fileName": "announcement",
         "key": "announcement",
