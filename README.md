@@ -24,9 +24,18 @@
 
 在 venera 的仓库地址栏填入：
 
+线路一
+
 ```text
 https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/index.json
 ```
+
+线路二
+
+```text
+https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config/index.json
+```
+(更新慢，但是线路一卡缓存时可以使用线路二)
 
 ### 2. 如果不想影响原版仓库源的更新，推荐下面的做法：
 
