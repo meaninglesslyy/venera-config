@@ -253,11 +253,11 @@ function parseList(html, isFirstPage) {
 // ===== 源 =====
 
 class Trendszine extends ComicSource {
-    name = "潮流杂志"
+    name = "风流杂志"
 
     key = "trendszine"
 
-    version = "1.0.0"
+    version = "1.1.0"
 
     minAppVersion = "1.6.0"
 
@@ -266,7 +266,7 @@ class Trendszine extends ComicSource {
     // 探索页：只有一个 tab，内容取自网站首页
     explore = [
         {
-            title: "潮流杂志",
+            title: "风流杂志",
             type: "multiPageComicList",
             load: async (page) => {
                 let p = page && page > 1 ? page : 1
@@ -279,7 +279,7 @@ class Trendszine extends ComicSource {
 
     // 分类页：五个分区 + 一个独立 tag 区块
     category = {
-        title: "潮流杂志",
+        title: "风流杂志",
         parts: [
             {
                 name: "风流",
