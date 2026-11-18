@@ -161,6 +161,13 @@
         "description": "本站无需科学上网，裸连即可"
     },
     {
+        "name": "潮流杂志",
+        "fileName": "real_person_photo_book/trendszine.js",
+        "key": "trendszine",
+        "version": "1.0.0",
+        "description": ""
+    },
+    {
         "name": "普通漫画⬇⬇⬇",
         "fileName": "announcement",
         "key": "announcement",
