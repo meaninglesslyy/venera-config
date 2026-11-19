@@ -35,7 +35,6 @@ https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/index.json
 ```text
 https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config/index.json
 ```
-(平时不推送更新，只有当线路一卡缓存导致无法及时推送更新时，可以使用线路二)
 
 ### 2. 如果不想影响原版仓库源的更新，推荐下面的做法：
 
