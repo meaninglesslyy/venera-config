@@ -3,7 +3,7 @@
 class HentaiClub extends ComicSource {
     name = "绅士会所"
     key = "hentaiclub"
-    version = "1.0.0"
+    version = "1.0.1"
     minAppVersion = "1.6.0"
     url = "https://cdn.jsdelivr.net/gh/meaninglesslyy/venera-config@main/real_person_photo_book/hentaiclub.js"
 
@@ -20,24 +20,28 @@ class HentaiClub extends ComicSource {
         if (!url) return ""
         url = url.trim()
         if (url.startsWith("//")) return "https:" + url
-        if (url.startsWith("/")) return this.BASE + url
         if (url.startsWith("http")) return url
-        return ""
+        if (url.startsWith("/")) return this.BASE + url
+        // bare relative path, e.g. "r15/71554.html"
+        return `${this.BASE}/${url}`
     }
 
 
     _parseCard(item) {
-        const link = item.querySelector("a.item-link")
+        // 2026-11 markup: <a class="tile" href="/r15/71554.html"><span class="item-link-text">
+        // Older markup used a.item-link + div.item-link-text. Accept both.
+        const link = item.querySelector("a.tile") || item.querySelector("a.item-link")
         const href = link ? link.attributes["href"] : ""
         if (!href) return null
 
-        const id = href  // full URL like https://www.hentaiclub.net/r15/70472.html
+        const id = this._abs(href)  // relative href -> absolute detail URL
+        if (!id) return null
 
         const img = item.querySelector("img.item-img")
         const coverRaw = img ? (img.attributes["data-original"] || img.attributes["src"] || "") : ""
         const cover = this._abs(coverRaw) || this.SITE_ICON
 
-        const titleEl = item.querySelector("div.item-link-text")
+        const titleEl = item.querySelector(".item-link-text")
         const title = titleEl ? titleEl.text.trim() : ""
 
         const numEl = item.querySelector("span.item-num")
@@ -81,20 +85,43 @@ class HentaiClub extends ComicSource {
         return mp
     }
 
+    /**
+     * Build the URL for a list page. The site has three distinct pagination
+     * shapes (verified live 2026-11-25):
+     *   sort  -> page1 /sort/r15.html,  pageN /sort/r15-N.html  (suffix form;
+     *            the old /sort/r15.html/N/ now 301-redirects)
+     *   tag   -> page1 /tag/<slug>/,    pageN /tag/<slug>/N/
+     *   search-> page1 /search/?q=<kw>, pageN /search/?q=<kw>&page=N
+     *          (the old /search/<kw>/ now 301s to /search/?q=)
+     */
+    _listUrl(cleanPath, page) {
+        if (cleanPath.startsWith("search/") || cleanPath === "search") {
+            // `cleanPath` is "search/<encoded keyword>" -> use keyword only
+            const kw = cleanPath.replace(/^search\/?/, "")
+            const q = `?q=${kw}`
+            return page <= 1
+                ? `${this.BASE}/search/${q}`
+                : `${this.BASE}/search/${q}&page=${page}`
+        }
+        if (cleanPath.startsWith("sort/")) {
+            const m = cleanPath.match(/^(sort\/)(.+?)\.html$/)
+            if (m) {
+                return page <= 1
+                    ? `${this.BASE}/${m[1]}${m[2]}.html`
+                    : `${this.BASE}/${m[1]}${m[2]}-${page}.html`
+            }
+            return `${this.BASE}/${cleanPath}`
+        }
+        // tag (and any remaining path): /path/  and /path/N/
+        return page <= 1
+            ? `${this.BASE}/${cleanPath}/`
+            : `${this.BASE}/${cleanPath}/${page}/`
+    }
+
     async _fetchList(path, page, pagePrefix) {
-        let url
         // Normalize: strip trailing slash so pagination builds cleanly.
         const cleanPath = path.replace(/\/+$/, "")
-        if (page <= 1) {
-            // sort pages are first-page at the bare .html path; tag/search pages
-            // canonicalize with a trailing slash (bare path 302-redirects).
-            url = cleanPath.endsWith(".html")
-                ? `${this.BASE}/${cleanPath}`
-                : `${this.BASE}/${cleanPath}/`
-        } else {
-            // Pagination: /sort/r15.html/2/  or  /tag/xxx/2/  or  /search/xxx/2/
-            url = `${this.BASE}/${cleanPath}/${page}/`
-        }
+        const url = this._listUrl(cleanPath, page)
 
         const res = await Network.get(url)
         if (res.status !== 200) {
@@ -165,7 +192,13 @@ class HentaiClub extends ComicSource {
     category = {
         title: "绅士会所",
         parts: [
- 
+            {
+                name: "分级",
+                type: "fixed",
+                itemType: "category",
+                categories: ["R-15", "R-18"],
+                categoryParams: ["sort/r15.html", "sort/r18.html"],
+            },
             // <<<TAG_PARTS>>>
 // Top 200 tags (by work count) — 10-5 layout 2026-10-05
             {
@@ -282,14 +315,9 @@ class HentaiClub extends ComicSource {
 
     search = {
         load: async (keyword, options, page) => {
-            const encoded = encodeURIComponent(keyword)
-            // POST to / then follow redirect
-            let url
-            if (page <= 1) {
-                url = `${this.BASE}/search/${encoded}/`
-            } else {
-                url = `${this.BASE}/search/${encoded}/${page}/`
-            }
+            // New search endpoint (2026-11): /search/?q=<kw>[&page=N].
+            // The old /search/<kw>/ path 301s here, and Venera does not follow it.
+            const url = this._listUrl(`search/${encodeURIComponent(keyword)}`, page)
 
             const res = await Network.get(url)
             if (res.status !== 200) {
@@ -323,8 +351,8 @@ class HentaiClub extends ComicSource {
             let title = ""
             let views = ""
             for (let i = 0; i < infoBoxes.length; i++) {
-                const titleEl = infoBoxes[i].querySelector("span.post-info-title")
-                const textEl = infoBoxes[i].querySelector("span.post-info-text")
+                const titleEl = infoBoxes[i].querySelector(".post-info-title")
+                const textEl = infoBoxes[i].querySelector(".post-info-text")
                 const label = titleEl ? titleEl.text.trim() : ""
                 const value = textEl ? textEl.text.trim() : ""
                 if (i === 0) {
